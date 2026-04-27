@@ -18,5 +18,5 @@ GOOGLE_CX      = "1203edf038cbd4bc8"
 DB_PATH = "oracle_hub.db"
 
 # ── Server ──────────────────────────────────────────────────
-PORT  = 3000
-DEBUG = True
+PORT           = int(os.environ.get("PORT", 3000))
+DEBUG          = False
