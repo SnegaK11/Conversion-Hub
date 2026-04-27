@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Oracle Conversion Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<style>
+/* ─── DESIGN TOKENS ─── */
+:root {
+  --or:#E8490F; --or-dk:#C03A08; --or-lt:#F26B3A; --or-pale:#FDF0EB;
+  --cream:#FDF6F0; --peach:#FAF0E8;
+  --white:#FFFFFF; --ink:#0F0F0F; --ink2:#1A1A1A; --ink3:#2C2C2C;
+  --muted:#6B6B6B; --muted2:#9A9A9A; --rule:#E8E0D8; --rule2:#F0EBE5;
+  --suc:#1A7A3C; --warn:#B86800; --info:#0060A0; --err:#C02020;
+  --fd:'DM Serif Display',Georgia,serif; --fb:'DM Sans','Helvetica Neue',sans-serif;
+  --tbar:56px; --scol:56px; --sexp:260px; --dur:260ms; --ease:cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--fb);font-size:14px;color:var(--ink);background:var(--cream);-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font:inherit}
+input,textarea{font:inherit;outline:none;border:none}
+
+/* ─── ORANGE PROGRESS BAR (GoldMine) ─── */
+.topbar-prog{position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--or),var(--or-lt));z-index:300}
+
+/* ─── TOPBAR ─── */
+.topbar{
+  position:fixed;top:3px;left:0;right:0;height:var(--tbar);
+  background:var(--white);border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;z-index:200;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+.topbar-ham{
+  width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);flex-shrink:0;transition:color .15s;
+}
+.topbar-ham:hover{color:var(--or)}
+.topbar-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:0 20px 0 0;border-right:1px solid var(--rule);
+  height:36px;flex-shrink:0;
+}
+.brand-mark{
+  width:30px;height:30px;border-radius:8px;
+  background:var(--or);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(232,73,15,.35);flex-shrink:0;
+}
+.brand-name{font-size:13px;font-weight:700;white-space:nowrap;letter-spacing:-.2px}
+.brand-name em{color:var(--or);font-style:normal}
+
+/* Search area */
+.topbar-search{flex:1;max-width:540px;margin:0 24px;position:relative}
+.search-input{
+  width:100%;height:36px;padding:0 44px 0 38px;
+  border:1.5px solid var(--rule);border-radius:999px;
+  font-size:13px;color:var(--ink);background:var(--cream);
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.search-input::placeholder{color:var(--muted2)}
+.search-input:focus{border-color:var(--or);background:var(--white);box-shadow:0 0 0 3px rgba(232,73,15,.12)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted2);pointer-events:none}
+.search-aibadge{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:var(--or);color:#fff;font-size:9px;font-weight:700;letter-spacing:.6px;
+  padding:2px 7px;border-radius:999px;cursor:pointer;
+  box-shadow:0 1px 4px rgba(232,73,15,.4);
+}
+
+/* Topbar right */
+.topbar-right{display:flex;align-items:center;gap:6px;margin-left:auto;padding-right:20px}
+.topbar-nav-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:999px;
+  font-size:12px;font-weight:600;
+  color:var(--muted);border:1.5px solid var(--rule);
+  background:var(--white);transition:all .15s;
+  cursor:pointer;font-family:var(--fb);
+}
+.topbar-nav-btn:hover{border-color:var(--or);color:var(--or);background:var(--or-pale)}
+.ico-btn{
+  width:34px;height:34px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);transition:background .15s,color .15s;
+}
+.ico-btn:hover{background:var(--peach);color:var(--or)}
+.avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--or),var(--or-dk));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11px;font-weight:700;
+  box-shadow:0 2px 8px rgba(232,73,15,.3);cursor:pointer;margin-left:4px;
+}
+
+/* ─── AI PANEL ─── */
+.ai-panel{
+  display:none;
+  position:absolute;top:calc(100% + 8px);left:0;right:0;
+  background:var(--white);border:1px solid var(--rule);
+  border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.12);
+  z-index:400;overflow:hidden;
+  animation:aislide .18s ease;
+}
+@keyframes aislide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.ai-panel.open{display:block}
+.ai-header{
+  background:linear-gradient(135deg,var(--or),var(--or-dk));
+  padding:11px 16px;display:flex;align-items:center;gap:8px;
+}
+.ai-header-title{color:#fff;font-size:12px;font-weight:700;flex:1}
+.ai-header-badge{
+  background:rgba(255,255,255,.22);color:#fff;
+  font-size:9px;font-weight:700;letter-spacing:.5px;
+  padding:2px 8px;border-radius:999px;
+}
+.ai-body{padding:16px;min-height:72px;max-height:380px;overflow-y:auto}
+.ai-body::-webkit-scrollbar{width:4px}
+.ai-body::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+.ai-footer{
+  border-top:1px solid var(--rule2);padding:8px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ai-save-btn{
+  font-size:11px;color:var(--or);font-weight:700;
+  padding:4px 12px;border-radius:999px;
+  border:1px solid rgba(232,73,15,.3);
+  display:none;transition:background .15s;
+}
+.ai-save-btn:hover{background:var(--or-pale)}
+.ai-close-btn{font-size:11px;color:var(--muted);padding:4px 8px;border-radius:6px;transition:background .15s}
+.ai-close-btn:hover{background:var(--rule2)}
+
+/* Thinking dots */
+.thinking{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;padding:4px 0}
+.dots{display:flex;gap:4px}
+.dots span{width:6px;height:6px;border-radius:50%;background:var(--or);animation:dotpulse 1.2s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotpulse{0%,80%,100%{transform:scale(.5);opacity:.35}40%{transform:scale(1);opacity:1}}
+
+/* AI answer formatting */
+.ai-answer{font-size:13px;line-height:1.7;color:var(--ink2)}
+.ai-answer h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--or);margin:12px 0 6px}
+.ai-answer h4:first-child{margin-top:0}
+.ai-answer ul{padding-left:18px;margin:6px 0 10px}
+.ai-answer li{margin-bottom:4px;font-size:12px}
+.ai-answer p{font-size:12px;margin-bottom:8px}
+.ai-answer p:last-child{margin-bottom:0}
+.ai-answer strong{font-weight:700;color:var(--ink)}
+.ai-answer code{background:var(--rule2);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11px}
+
+/* Internal hit card */
+.hit-card{
+  margin-bottom:10px;padding:12px 14px;
+  background:var(--peach);border-radius:8px;
+  border-left:3px solid var(--or);
+}
+.hit-card:last-child{margin-bottom:0}
+.hit-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:4px}
+.hit-desc{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:6px}
+.hit-meta{font-size:11px;color:var(--muted2)}
+
+/* ─── SIDEBAR ─── */
+.sidebar{
+  position:fixed;top:calc(3px + var(--tbar));left:0;bottom:0;
+  width:var(--scol);background:var(--white);
+  border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:width var(--dur) var(--ease);
+  z-index:100;box-shadow:2px 0 8px rgba(0,0,0,.04);
+}
+.sidebar.open{width:var(--sexp)}
+.sb-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.sb-scroll::-webkit-scrollbar{width:3px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+
+/* Section labels */
+.sb-label{
+  height:28px;padding:0 16px;display:flex;align-items:center;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--muted2);white-space:nowrap;overflow:hidden;
+  opacity:0;transition:opacity var(--dur);margin-top:4px;
+}
+.sidebar.open .sb-label{opacity:1}
+
+/* Nav rows */
+.sb-row{
+  display:flex;align-items:center;height:40px;padding:0 13px;
+  gap:11px;cursor:pointer;white-space:nowrap;overflow:hidden;
+  position:relative;user-select:none;transition:background .12s;
+}
+.sb-row:hover{background:var(--or-pale)}
+.sb-row.active{background:rgba(232,73,15,.08)}
+.sb-row.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--or);border-radius:0 2px 2px 0}
+.sb-row-ico{width:28px;height:28px;min-width:28px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:color .12s;border-radius:6px}
+.sb-row.active .sb-row-ico,.sb-row:hover .sb-row-ico{color:var(--or)}
+.sb-row-lbl{font-size:13px;color:var(--ink3);flex:1;opacity:0;transition:opacity var(--dur)}
+.sidebar.open .sb-row-lbl{opacity:1}
+.sb-row.active .sb-row-lbl{font-weight:600;color:var(--ink)}
+.sb-chev{color:var(--muted2);opacity:0;transition:opacity var(--dur),transform .2s;flex-shrink:0}
+.sidebar.open .sb-chev{opacity:1}
+.sb-row.mod-open .sb-chev{transform:rotate(90deg)}
+
+/* Sub rows */
+.sb-subs{max-height:0;overflow:hidden;transition:max-height .22s ease}
+.sb-subs.open{max-height:400px}
+.sb-sub{
+  display:flex;align-items:center;height:36px;padding:0 13px 0 50px;
+  gap:8px;cursor:pointer;white-space:nowrap;overflow:hidden;
+  position:relative;user-select:none;transition:background .12s;
+}
+.sb-sub:hover{background:var(--or-pale)}
+.sb-sub.active{background:rgba(232,73,15,.07)}
+.sb-sub.active::before{content:'';position:absolute;left:0;top:5px;bottom:5px;width:3px;background:var(--or);border-radius:0 2px 2px 0}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:var(--rule);flex-shrink:0;transition:background .12s}
+.sb-sub.active .sb-dot{background:var(--or)}
+.sb-sub-lbl{font-size:12px;color:var(--muted);opacity:0;transition:opacity var(--dur)}
+.sidebar.open .sb-sub-lbl{opacity:1}
+.sb-sub.active .sb-sub-lbl{color:var(--or);font-weight:600}
+
+/* Sidebar footer */
+.sb-foot{border-top:1px solid var(--rule2);flex-shrink:0}
+
+/* ─── MAIN ─── */
+.main{
+  position:fixed;top:calc(3px + var(--tbar));left:var(--scol);right:0;bottom:0;
+  overflow-y:auto;background:var(--cream);
+  transition:left var(--dur) var(--ease);
+}
+.main.sb-open{left:var(--sexp)}
+.main::-webkit-scrollbar{width:6px}
+.main::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+
+/* ─── HERO (GoldMine faithful) ─── */
+.hero{
+  background:linear-gradient(118deg,#F8D5BE 0%,#FADDCC 18%,#FCE9DA 42%,#FDF4EE 68%,#FEFAF8 100%);
+  padding:56px 60px 52px;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;right:180px;top:-80px;
+  width:500px;height:500px;
+  background:radial-gradient(ellipse,rgba(240,110,50,.16) 0%,rgba(240,110,50,.04) 50%,transparent 70%);
+  pointer-events:none;
+}
+.hero-layout{display:flex;gap:56px;align-items:flex-start;position:relative}
+.hero-left{flex:1;min-width:0}
+.hero-right{flex-shrink:0;width:352px}
+.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:var(--or);margin-bottom:16px;opacity:.85}
+.hero-title{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:66px;line-height:1.07;font-weight:400;
+  color:var(--ink);margin-bottom:0;letter-spacing:-1.5px;
+}
+.hero-title em{color:var(--or);font-style:normal}
+.hero-pills{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}
+.hero-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 16px;border:1.5px solid rgba(232,73,15,.38);
+  border-radius:999px;font-size:12px;font-weight:600;
+  color:var(--or);background:rgba(232,73,15,.05);
+}
+.hero-body{font-size:15px;color:#484848;max-width:480px;line-height:1.65;margin-bottom:28px}
+.hero-actions{display:flex;align-items:center;gap:12px}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--or);color:#fff;padding:13px 26px;
+  border-radius:8px;font-size:14px;font-weight:700;
+  box-shadow:0 3px 16px rgba(232,73,15,.38);transition:all .2s;
+}
+.btn-primary:hover{background:var(--or-dk);transform:translateY(-1px);box-shadow:0 5px 20px rgba(232,73,15,.44)}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;color:var(--ink);
+  padding:12px 22px;border-radius:8px;
+  font-size:14px;font-weight:600;
+  border:1.5px solid rgba(0,0,0,.18);transition:all .2s;
+}
+.btn-ghost:hover{border-color:var(--or);color:var(--or)}
+
+/* GoldMine stat card */
+.stat-card{
+  background:#fff;border-radius:12px;
+  box-shadow:0 4px 24px rgba(0,0,0,.09),0 1px 4px rgba(0,0,0,.05);
+  border:1px solid rgba(0,0,0,.04);
+  display:grid;grid-template-columns:1fr 1fr;
+}
+.stat-cell{padding:28px 26px}
+.stat-cell:nth-child(2){border-left:1px solid #EBEBEB}
+.stat-cell:nth-child(3){border-top:1px solid #EBEBEB}
+.stat-cell:nth-child(4){border-left:1px solid #EBEBEB;border-top:1px solid #EBEBEB}
+.stat-num{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:44px;line-height:1;font-weight:400;
+  color:#111;margin-bottom:8px;letter-spacing:-1px;
+}
+.stat-lbl{font-size:13px;color:#666;line-height:1.45;display:flex;align-items:flex-start;gap:5px}
+.stat-lbl svg{flex-shrink:0;margin-top:2px;color:#999}
+
+/* ─── SUBMODULE VIEW ─── */
+.page-header{background:var(--white);border-bottom:1px solid var(--rule);padding:22px 40px 0}
+.breadcrumb{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.breadcrumb .sep{color:var(--muted2)}
+.breadcrumb .active{color:var(--ink2);font-weight:500}
+.page-title{font-family:'DM Serif Display',Georgia,serif;font-size:34px;color:var(--ink);line-height:1.15;margin-bottom:4px}
+.page-meta{font-size:12px;color:var(--muted);margin-bottom:20px}
+.page-actions{display:flex;gap:8px;padding-bottom:16px}
+
+/* Tabs */
+.tabs-bar{background:var(--white);border-bottom:1px solid var(--rule);display:flex;padding:0 40px}
+.tab-item{
+  padding:13px 18px;font-size:13px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-bottom:3px solid transparent;
+  display:flex;align-items:center;gap:7px;white-space:nowrap;
+  transition:color .14s,border-color .14s;
+}
+.tab-item:hover{color:var(--ink)}
+.tab-item.active{color:var(--or);border-bottom-color:var(--or)}
+.tab-count{
+  background:var(--rule2);color:var(--muted);
+  font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;
+}
+.tab-item.active .tab-count{background:rgba(232,73,15,.12);color:var(--or)}
+
+/* Tab content */
+.tab-content{padding:24px 40px 48px;display:none}
+.tab-content.active{display:block;animation:fadeup .18s ease}
+@keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Alert banners */
+.alert{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:11px 15px;border-radius:8px;border:1px solid;
+  margin-bottom:16px;font-size:12px;line-height:1.55;
+}
+.alert svg{flex-shrink:0;margin-top:1px}
+.alert-or{background:rgba(232,73,15,.05);border-color:rgba(232,73,15,.22);color:#7A2800}
+.alert-bl{background:rgba(0,96,160,.05);border-color:rgba(0,96,160,.18);color:var(--info)}
+
+/* Section heading with orange bar */
+.sec-head{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:20px;color:var(--ink);margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.sec-head::before{content:'';display:block;width:4px;height:20px;background:var(--or);border-radius:2px}
+
+/* Rule cards */
+.rule-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.rule-card{
+  background:var(--white);border:1.5px solid var(--rule2);
+  border-radius:14px;padding:16px 18px;
+  display:flex;gap:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .18s;
+}
+.rule-card:hover{box-shadow:0 3px 12px rgba(232,73,15,.1);border-color:rgba(232,73,15,.22);transform:translateY(-1px)}
+.rule-sev{width:4px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:20px}
+.sev-c{background:var(--or)}
+.sev-h{background:var(--warn)}
+.sev-m{background:var(--info)}
+.sev-l{background:var(--suc)}
+.rule-body{flex:1;min-width:0}
+.rule-top{display:flex;align-items:flex-start;flex-wrap:wrap;gap:7px;margin-bottom:6px}
+.rule-title{font-size:14px;font-weight:700;color:var(--ink);flex:1;min-width:140px}
+.badge{
+  display:inline-flex;align-items:center;padding:2px 8px;
+  border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.3px;border:1px solid;
+}
+.badge-c{background:rgba(232,73,15,.09);color:var(--or);border-color:rgba(232,73,15,.28)}
+.badge-h{background:rgba(184,104,0,.09);color:var(--warn);border-color:rgba(184,104,0,.28)}
+.badge-m{background:rgba(0,96,160,.07);color:var(--info);border-color:rgba(0,96,160,.2)}
+.badge-l{background:rgba(26,122,60,.07);color:var(--suc);border-color:rgba(26,122,60,.2)}
+.badge-tag{background:rgba(232,73,15,.06);color:var(--or);border-color:rgba(232,73,15,.18)}
+.badge-ai{background:rgba(80,40,200,.07);color:#4020AA;border-color:rgba(80,40,200,.18)}
+.rule-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.rule-meta{display:flex;flex-wrap:wrap;gap:12px}
+.rule-mi{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted2)}
+.rule-mi strong{color:var(--muted);font-weight:500}
+.rule-actions{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
+.rule-btn{
+  font-size:11px;color:var(--or);font-weight:600;
+  padding:3px 10px;border-radius:999px;
+  border:1px solid rgba(232,73,15,.2);transition:background .12s;
+}
+.rule-btn:hover{background:var(--or-pale)}
+
+/* Lineage flow */
+.lineage-wrap{
+  background:var(--white);border:1px solid var(--rule2);
+  border-radius:14px;padding:24px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+  margin-bottom:20px;overflow-x:auto;
+}
+.lineage-flow{min-width:680px;display:flex;align-items:center}
+.flow-node{display:flex;flex-direction:column;align-items:center;gap:5px}
+.node-box{
+  background:var(--white);border:1.5px solid var(--rule);border-radius:10px;
+  padding:9px 15px;min-width:130px;text-align:center;
+  cursor:pointer;transition:all .18s;
+}
+.node-box:hover{border-color:var(--or);box-shadow:0 0 0 3px rgba(232,73,15,.1);transform:translateY(-2px)}
+.node-box.src{border-color:var(--info);background:rgba(0,96,160,.04)}
+.node-box.cur{border-color:var(--or);background:rgba(232,73,15,.05)}
+.node-box.imp{border-color:var(--warn);background:rgba(184,104,0,.04)}
+.node-lbl{font-size:11px;font-weight:700;color:var(--ink2)}
+.node-sub{font-size:10px;color:var(--muted2);margin-top:2px}
+.flow-arrow{display:flex;align-items:center;padding:0 10px;color:var(--muted2);flex-shrink:0;align-self:center}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px 20px;text-align:center}
+.empty-icon{width:52px;height:52px;border-radius:50%;background:var(--or-pale);display:flex;align-items:center;justify-content:center;color:var(--or);margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:700;color:var(--ink3);margin-bottom:5px}
+.empty-desc{font-size:12px;color:var(--muted);max-width:240px;line-height:1.5}
+
+/* ─── AI SIDEBAR BADGES ─── */
+.sb-ai-badge{
+  font-size:9px;font-weight:800;letter-spacing:.6px;
+  background:var(--or);color:#fff;
+  padding:2px 6px;border-radius:999px;
+  opacity:0;transition:opacity var(--dur);margin-left:auto;flex-shrink:0;
+}
+.sidebar.open .sb-ai-badge{opacity:1}
+.sb-disc-badge{
+  font-size:9px;font-weight:800;
+  background:#7B1FA2;color:#fff;
+  padding:2px 6px;border-radius:999px;
+  opacity:0;transition:opacity var(--dur);margin-left:auto;flex-shrink:0;
+}
+.sidebar.open .sb-disc-badge{opacity:1}
+.ai-pulse-dot{
+  position:absolute;top:2px;right:2px;
+  width:6px;height:6px;background:var(--or);border-radius:50%;
+  animation:aidpulse 2s infinite;
+}
+@keyframes aidpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.4)}}
+
+/* ─── AI OVERLAY + DRAWER ─── */
+.ai-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);
+  z-index:150;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.ai-overlay.show{opacity:1;pointer-events:auto}
+.ai-drawer{
+  position:fixed;right:0;top:0;bottom:0;width:420px;
+  background:#1B2A3B;z-index:200;
+  display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:-4px 0 24px rgba(0,0,0,.3);
+}
+.ai-drawer.open{transform:translateX(0)}
+.aid-hdr{
+  background:#141E2B;padding:0 16px;height:48px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;
+}
+.aid-left{display:flex;align-items:center;gap:10px}
+.aid-mark{
+  width:28px;height:28px;background:var(--or);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.aid-mark::after{
+  content:'';position:absolute;inset:-3px;
+  border:1.5px solid rgba(232,73,15,.35);border-radius:9px;
+  animation:airing 2.2s infinite;
+}
+@keyframes airing{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:0;transform:scale(1.25)}}
+.aid-titles h4{font-size:13px;font-weight:700;color:#fff}
+.aid-titles p{font-size:10px;color:#6B8BA4}
+.aid-close{
+  background:none;border:none;color:#6B8BA4;font-size:18px;
+  cursor:pointer;padding:4px;line-height:1;border-radius:4px;
+  transition:color .12s,background .12s;
+}
+.aid-close:hover{color:#fff;background:rgba(255,255,255,.08)}
+.aid-tier{
+  padding:7px 14px;background:rgba(0,0,0,.15);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0;
+}
+.tier-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#4A6278}
+.tier-pill{
+  font-size:10px;font-weight:600;padding:2px 9px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);background:transparent;
+  color:#6B8BA4;cursor:pointer;transition:all .12s;font-family:var(--fb);
+}
+.tier-pill.on{background:rgba(255,255,255,.1);color:#C8D8E4;border-color:rgba(255,255,255,.25)}
+#tierActive{color:var(--or);font-weight:600;font-size:10px;margin-left:auto}
+.aid-msgs{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;
+}
+.aid-msgs::-webkit-scrollbar{width:3px}
+.aid-msgs::-webkit-scrollbar-thumb{background:#2C3E50;border-radius:2px}
+.ai-msg{max-width:90%;animation:msgin .18s ease}
+@keyframes msgin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.ai-msg.user{align-self:flex-end}
+.ai-msg.bot{align-self:flex-start}
+.ai-mb{padding:9px 13px;font-size:12px;line-height:1.65;border-radius:8px}
+.ai-msg.user .ai-mb{background:var(--or);color:#fff;border-radius:12px 12px 3px 12px}
+.ai-msg.bot .ai-mb{
+  background:rgba(255,255,255,.07);color:#D0D8E0;
+  border:1px solid rgba(255,255,255,.07);border-radius:12px 12px 12px 3px;
+}
+.ai-msg.bot .ai-mb strong{color:#fff}
+.ai-mb a{color:#7EC8E3;font-size:11px}
+.ai-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.ai-chip{
+  font-size:10.5px;padding:3px 10px;border-radius:999px;
+  border:1px solid rgba(232,73,15,.35);background:rgba(232,73,15,.08);
+  color:#F09080;cursor:pointer;transition:all .12s;font-family:var(--fb);
+}
+.ai-chip:hover{background:rgba(232,73,15,.2);border-color:var(--or);color:#fff}
+.ty-dots{display:flex;gap:4px;align-items:center;padding:2px 0}
+.ty-dots span{width:5px;height:5px;background:#4A6278;border-radius:50%;animation:tyd 1.4s infinite}
+.ty-dots span:nth-child(2){animation-delay:.2s}
+.ty-dots span:nth-child(3){animation-delay:.4s}
+@keyframes tyd{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px);background:var(--or)}}
+.src-badge{
+  display:inline-block;margin-top:7px;font-size:10px;
+  padding:2px 9px;border-radius:999px;font-weight:600;
+}
+.src-site{background:rgba(232,73,15,.12);color:#F09080;border:1px solid rgba(232,73,15,.3)}
+.src-ext{background:rgba(0,107,189,.12);color:#6BAED4;border:1px solid rgba(0,107,189,.3)}
+.src-new{background:rgba(123,31,162,.15);color:#CE93D8;border:1px solid rgba(123,31,162,.3)}
+/* AI discovered in-page section */
+.ai-disc-section{margin-top:22px}
+.ai-disc-hdr{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:linear-gradient(135deg,rgba(123,31,162,.06),rgba(74,20,140,.04));
+  border:1px solid rgba(123,31,162,.2);border-radius:10px 10px 0 0;border-bottom:none;
+}
+.ai-disc-hdr h3{font-size:12px;font-weight:700;color:#7B1FA2}
+.ai-disc-cnt{
+  font-size:10px;color:#9C27B0;background:var(--white);
+  border:1px solid rgba(123,31,162,.22);border-radius:999px;
+  padding:1px 8px;font-weight:600;
+}
+.ai-disc-grid-wrap{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:12px;padding:14px;
+  background:rgba(123,31,162,.02);
+  border:1px solid rgba(123,31,162,.2);border-radius:0 0 10px 10px;min-height:60px;
+}
+.ai-disc-empty{font-size:12px;color:var(--muted2);padding:12px;text-align:center;font-style:italic}
+.rule-card.ai-found{border-left:3px solid #7B1FA2;animation:cardin .35s ease}
+@keyframes cardin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* Drawer input */
+.aid-input-area{padding:10px 12px;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0}
+.aid-input-row{display:flex;gap:6px}
+#aidInput{
+  flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:#D0D8E0;padding:8px 12px;font-size:12px;font-family:var(--fb);
+  border-radius:6px;resize:none;outline:none;max-height:90px;transition:border-color .15s;
+}
+#aidInput::placeholder{color:#4A6278}
+#aidInput:focus{border-color:rgba(232,73,15,.55)}
+.aid-send{
+  background:var(--or);border:none;border-radius:6px;
+  width:36px;height:36px;color:#fff;font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  align-self:flex-end;transition:background .12s;box-shadow:0 2px 8px rgba(232,73,15,.35);
+}
+.aid-send:hover{background:var(--or-dk)}
+/* Inject toast */
+.inject-toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#2E7D32;color:#fff;padding:10px 20px;border-radius:6px;
+  font-size:12px;font-weight:600;z-index:500;font-family:var(--fb);
+  box-shadow:0 4px 16px rgba(0,0,0,.25);animation:injIn .25s ease;display:none;
+}
+.inject-toast.show{display:block}
+@keyframes injIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:22px;right:22px;
+  background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:999px;font-size:12px;font-weight:500;
+  box-shadow:0 6px 24px rgba(0,0,0,.2);z-index:999;
+  display:flex;align-items:center;gap:8px;
+  animation:toastin .22s ease;max-width:300px;
+}
+@keyframes toastin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.toast-ok{color:#6EE26E}
+.toast-warn{color:var(--or)}
+
+/* Util */
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Orange progress bar -->
+<div class="topbar-prog"></div>
+
+<!-- ════════════════════════════════════
+     TOP BAR
+════════════════════════════════════ -->
+<nav class="topbar">
+  <button class="topbar-ham" id="hamBtn" title="Toggle sidebar">
+    <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+      <rect width="18" height="2" rx="1" fill="currentColor"/>
+      <rect y="6" width="12" height="2" rx="1" fill="currentColor"/>
+      <rect y="12" width="18" height="2" rx="1" fill="currentColor"/>
+    </svg>
+  </button>
+
+  <div class="topbar-brand">
+    <div class="brand-mark">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="5.5" stroke="white" stroke-width="1.5"/>
+        <circle cx="8" cy="8" r="2" fill="white"/>
+      </svg>
+    </div>
+    <span class="brand-name"><em>Oracle</em> Conversion Hub</span>
+  </div>
+
+  <!-- ── AI Search ── -->
+  <div class="topbar-search" id="searchWrap">
+    <svg class="search-icon" width="14" height="14" viewBox="0 0 20 20" fill="none">
+      <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M14 14l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <input id="searchInput" class="search-input" type="text"
+      placeholder="Ask AI — e.g. date format for FBDI, batch size limits, FBDI lineage…"/>
+    <span class="search-aibadge">AI</span>
+
+    <!-- AI Answer Panel -->
+    <div class="ai-panel" id="aiPanel">
+      <div class="ai-header">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2l2.5 5.5H18l-4.5 3.3 1.8 5.7L10 13.3l-5.3 3.2 1.8-5.7L2 7.5h5.5L10 2z" fill="white"/>
+        </svg>
+        <span class="ai-header-title">Oracle AI Assistant</span>
+        <span class="ai-header-badge">POWERED BY CLAUDE</span>
+      </div>
+      <div class="ai-body" id="aiBody">
+        <div style="text-align:center;padding:14px 0;font-size:12px;color:var(--muted2)">
+          Type your question and press <strong>Enter</strong> to get an AI-powered answer.
+        </div>
+      </div>
+      <div class="ai-footer">
+        <button class="ai-save-btn" id="aiSaveBtn">✦ Save to Knowledge Base</button>
+        <button class="ai-close-btn" id="aiCloseBtn">Dismiss ✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <button class="topbar-nav-btn" onclick="showToast('Settings coming soon','warn')">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Settings
+    </button>
+    <button class="topbar-nav-btn" onclick="showToast('Help coming soon','warn')">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M7.5 7.5C7.5 6.12 8.62 5 10 5s2.5 1.12 2.5 2.5c0 1.1-1.5 2-1.5 2v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="10" cy="13.5" r=".75" fill="currentColor"/>
+      </svg>
+      Help
+    </button>
+    <button class="ico-btn" title="Notifications">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2a6 6 0 0 1 6 6v4l1.5 2.5h-15L4 12V8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 15.5a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="avatar" title="Snega K">SK</div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-scroll">
+
+    <!-- Dashboard -->
+    <div style="padding:8px 0 4px">
+      <div class="sb-row active" id="homeRow" onclick="showHome()">
+        <div class="sb-row-ico">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <path d="M3 9.5L10 3l7 6.5V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M8 19v-6h4v6" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <span class="sb-row-lbl">Dashboard</span>
+      </div>
+    </div>
+
+    <div class="sb-label">Modules</div>
+    <div style="padding:2px 0">
+
+      <!-- Finance -->
+      <div class="sb-row" id="mod-finance" onclick="toggleMod('finance')">
+        <div class="sb-row-ico">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="5" width="16" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M2 9h16" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 13h2M10 13h2M14 13h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="sb-row-lbl">Finance</span>
+        <svg class="sb-chev" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="sb-subs" id="subs-finance">
+        <div class="sb-sub" data-mod="Finance" data-sub="AR" onclick="selectSub('Finance','AR')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">AR — Accounts Receivable</span>
+        </div>
+        <div class="sb-sub" data-mod="Finance" data-sub="AP" onclick="selectSub('Finance','AP')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">AP — Accounts Payable</span>
+        </div>
+        <div class="sb-sub" data-mod="Finance" data-sub="GL" onclick="selectSub('Finance','GL')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">GL — General Ledger</span>
+        </div>
+        <div class="sb-sub" data-mod="Finance" data-sub="Projects" onclick="selectSub('Finance','Projects')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Projects</span>
+        </div>
+      </div>
+
+      <!-- SCM -->
+      <div class="sb-row" id="mod-scm" onclick="toggleMod('scm')">
+        <div class="sb-row-ico">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <path d="M2 17l5-10 4 6 3-4 4 8H2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="sb-row-lbl">SCM</span>
+        <svg class="sb-chev" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="sb-subs" id="subs-scm">
+        <div class="sb-sub" data-mod="SCM" data-sub="Inventory" onclick="selectSub('SCM','Inventory')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Inventory</span>
+        </div>
+        <div class="sb-sub" data-mod="SCM" data-sub="Procurement" onclick="selectSub('SCM','Procurement')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Procurement</span>
+        </div>
+      </div>
+
+      <!-- HCM -->
+      <div class="sb-row" id="mod-hcm" onclick="toggleMod('hcm')">
+        <div class="sb-row-ico">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M3 18c0-3.31 3.13-6 7-6s7 2.69 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="sb-row-lbl">HCM</span>
+        <svg class="sb-chev" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="sb-subs" id="subs-hcm">
+        <div class="sb-sub" data-mod="HCM" data-sub="Employees" onclick="selectSub('HCM','Employees')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Employee Records</span>
+        </div>
+        <div class="sb-sub" data-mod="HCM" data-sub="Payroll" onclick="selectSub('HCM','Payroll')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Payroll</span>
+        </div>
+        <div class="sb-sub" data-mod="HCM" data-sub="Benefits" onclick="selectSub('HCM','Benefits')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Benefits</span>
+        </div>
+      </div>
+    </div>
+
+      <!-- PDH — Product Data Hub (separate module) -->
+      <div class="sb-row" id="mod-pdh" onclick="toggleMod('pdh')">
+        <div class="sb-row-ico">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="3" width="16" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 7h8M6 10h8M6 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="sb-row-lbl">PDH</span>
+        <svg class="sb-chev" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="sb-subs" id="subs-pdh">
+        <div class="sb-sub" data-mod="PDH" data-sub="ItemMaster" onclick="selectSub('PDH','ItemMaster')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Item Master</span>
+        </div>
+        <div class="sb-sub" data-mod="PDH" data-sub="ItemEff" onclick="selectSub('PDH','ItemEff')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Item Eff</span>
+        </div>
+        <div class="sb-sub" data-mod="PDH" data-sub="ItemCategories" onclick="selectSub('PDH','ItemCategories')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Item Categories</span>
+        </div>
+        <div class="sb-sub" data-mod="PDH" data-sub="ItemStructure" onclick="selectSub('PDH','ItemStructure')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Item Structure</span>
+        </div>
+        <div class="sb-sub" data-mod="PDH" data-sub="ItemRelationship" onclick="selectSub('PDH','ItemRelationship')">
+          <div class="sb-dot"></div><span class="sb-sub-lbl">Item Relationship</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-label">AI Assistant</div>
+    <div style="padding:2px 0 8px">
+      <div class="sb-row" id="aiSideRow" onclick="openAIDrawer()">
+        <div class="sb-row-ico" style="position:relative">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2l2.5 5.5H18l-4.5 3.3 1.8 5.7L10 13.3l-5.3 3.2 1.8-5.7L2 7.5h5.5L10 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <!-- pulse dot when AI is active -->
+          <span class="ai-pulse-dot" id="aiPulseDot"></span>
+        </div>
+        <span class="sb-row-lbl">Ask AI Assistant</span>
+        <span class="sb-ai-badge" id="sbAiBadge">NEW</span>
+      </div>
+      <div class="sb-row" onclick="openAIDrawer()">
+        <div class="sb-row-ico">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M7.5 8.5C7.5 7.12 8.62 6 10 6s2.5 1.12 2.5 2.5c0 1.1-1.5 2-1.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="10" cy="13.5" r=".75" fill="currentColor"/>
+          </svg>
+        </div>
+        <span class="sb-row-lbl">Conversion Q&amp;A</span>
+      </div>
+      <div class="sb-row" onclick="openAIDrawer()">
+        <div class="sb-row-ico">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M7 10h6M7 7h3M7 13h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="sb-row-lbl">AI Discovered Cards</span>
+        <span class="sb-disc-badge hidden" id="sbDiscBadge">0</span>
+      </div>
+    </div>
+  </div>
+
+  
+</aside>
+
+<!-- ════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════ -->
+<main class="main" id="main">
+
+  <!-- ── HOME / HERO ── -->
+  <div id="view-home">
+    <div class="hero">
+      <div class="hero-layout">
+        <div class="hero-left">
+          <div class="hero-eyebrow">ORACLE FUSION · CONVERSION INTELLIGENCE PLATFORM</div>
+          <div class="hero-title">
+            AI-Powered<br/>
+            <em>Conversion Hub</em><br/>
+            for Oracle Cloud
+          </div>
+          <div class="hero-pills">
+            <span class="hero-pill">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/></svg>
+              Oracle Fusion Cloud
+            </span>
+            <span class="hero-pill">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.9 3.8L14 5.8l-3 2.9.7 4.1L8 10.8l-3.7 2 .7-4.1L2 5.8l4.1-.6L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              AI from Day One
+            </span>
+            <span class="hero-pill">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M5 4V3a3 3 0 0 1 6 0v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              FBDI Ready
+            </span>
+          </div>
+          <div class="hero-body">
+            A self-learning, AI-embedded knowledge platform for Oracle Fusion data conversion — organized by modules, driven by intelligence, updated automatically.
+          </div>
+          <div class="hero-actions">
+            <button class="btn-primary" onclick="selectSub('Finance','AR')">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 3 5-6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Explore Knowledge
+            </button>
+            <button class="btn-ghost" onclick="focusSearch()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Ask AI Assistant
+            </button>
+          </div>
+        </div>
+
+        <!-- GoldMine stat card -->
+        <div class="hero-right">
+          <div class="stat-card">
+            <div class="stat-cell">
+              <div class="stat-num" id="statTotal">142</div>
+              <div class="stat-lbl">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 3h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.3"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                Conversion rules across all modules
+              </div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-num">#1</div>
+              <div class="stat-lbl">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.9 3.8L14 5.8l-3 2.9.7 4.1L8 10.8l-3.7 2 .7-4.1L2 5.8l4.1-.6L8 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                Oracle Fusion Conversion Platform
+              </div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-num">10</div>
+              <div class="stat-lbl">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 4V3a3 3 0 0 1 6 0v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                Submodules with full coverage
+              </div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-num" id="statAI">0</div>
+              <div class="stat-lbl">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                AI queries answered this session
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module cards below hero -->
+    <div style="padding:36px 48px 48px">
+      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:var(--ink);margin-bottom:20px">
+        Module Overview
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">
+        <div onclick="selectSub('Finance','AR')" style="background:var(--white);border:1.5px solid var(--rule2);border-radius:14px;padding:22px;cursor:pointer;transition:all .18s;box-shadow:0 1px 4px rgba(0,0,0,.06)" onmouseover="this.style.borderColor='var(--or)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--rule2)';this.style.transform=''">
+          <div style="width:44px;height:44px;border-radius:10px;background:rgba(232,73,15,.1);display:flex;align-items:center;justify-content:center;color:var(--or);margin-bottom:12px">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 9h16M6 13h2M10 13h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">Finance</div>
+          <div style="font-size:12px;color:var(--muted)">AR · AP · GL · Projects</div>
+        </div>
+        <div onclick="selectSub('SCM','Inventory')" style="background:var(--white);border:1.5px solid var(--rule2);border-radius:14px;padding:22px;cursor:pointer;transition:all .18s;box-shadow:0 1px 4px rgba(0,0,0,.06)" onmouseover="this.style.borderColor='var(--or)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--rule2)';this.style.transform=''">
+          <div style="width:44px;height:44px;border-radius:10px;background:rgba(0,96,160,.1);display:flex;align-items:center;justify-content:center;color:var(--info);margin-bottom:12px">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M2 17l5-10 4 6 3-4 4 8H2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">SCM</div>
+          <div style="font-size:12px;color:var(--muted)">Inventory · Procurement</div>
+        </div>
+        <div onclick="selectSub('HCM','Employees')" style="background:var(--white);border:1.5px solid var(--rule2);border-radius:14px;padding:22px;cursor:pointer;transition:all .18s;box-shadow:0 1px 4px rgba(0,0,0,.06)" onmouseover="this.style.borderColor='var(--or)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--rule2)';this.style.transform=''">
+          <div style="width:44px;height:44px;border-radius:10px;background:rgba(26,122,60,.1);display:flex;align-items:center;justify-content:center;color:var(--suc);margin-bottom:12px">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 18c0-3.31 3.13-6 7-6s7 2.69 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">HCM</div>
+          <div style="font-size:12px;color:var(--muted)">Employees · Payroll · Benefits</div>
+        </div>
+        <div onclick="selectSub('PDH','ItemMaster')" style="background:var(--white);border:1.5px solid var(--rule2);border-radius:14px;padding:22px;cursor:pointer;transition:all .18s;box-shadow:0 1px 4px rgba(0,0,0,.06)" onmouseover="this.style.borderColor='var(--or)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--rule2)';this.style.transform=''">
+          <div style="width:44px;height:44px;border-radius:10px;background:rgba(184,104,0,.1);display:flex;align-items:center;justify-content:center;color:var(--warn);margin-bottom:12px">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 7h8M6 10h8M6 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">PDH</div>
+          <div style="font-size:12px;color:var(--muted)">Item Master · Eff · Categories · Structure · Relationship</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SUBMODULE VIEW ── -->
+  <div id="view-sub" class="hidden">
+    <div class="page-header">
+      <div class="breadcrumb" id="breadcrumb">
+        <span>Home</span><span class="sep">›</span>
+        <span id="bcMod">Module</span><span class="sep">›</span>
+        <span id="bcSub" class="active">Submodule</span>
+      </div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="page-title" id="pageTitle">Submodule</div>
+          <div class="page-meta" id="pageMeta">Oracle Fusion Conversion Knowledge</div>
+        </div>
+        <div class="page-actions">
+          <button class="rule-btn" style="padding:7px 16px;font-size:12px" onclick="showToast('Export available in enterprise version','warn')">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M3 10v3h10v-3M8 2v8M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Export
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-bar">
+      <div class="tab-item active" data-tab="quality" onclick="switchTab('quality')">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.9 3.8L14 5.8l-3 2.9.7 4.1L8 10.8l-3.7 2 .7-4.1L2 5.8l4.1-.6L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        Data Quality Checks
+        <span class="tab-count" id="cnt-quality">0</span>
+      </div>
+      <div class="tab-item" data-tab="load" onclick="switchTab('load')">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2.5 2.5L11 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Data Load Checks
+        <span class="tab-count" id="cnt-load">0</span>
+      </div>
+      <div class="tab-item" data-tab="lineage" onclick="switchTab('lineage')">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="3" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="13" cy="4" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="13" cy="12" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l6-4M5 8l6 4" stroke="currentColor" stroke-width="1.3"/></svg>
+        Lineage &amp; Impact
+        <span class="tab-count" id="cnt-lineage">0</span>
+      </div>
+    </div>
+
+    <div class="tab-content active" id="tab-quality"></div>
+    <div class="tab-content" id="tab-load"></div>
+    <div class="tab-content" id="tab-lineage"></div>
+  </div>
+
+</main>
+
+<!-- ════════════════════════════════════
+     JAVASCRIPT — DATA + AI AGENT
+════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════
+   KNOWLEDGE BASE (internal DB — grows with AI)
+═══════════════════════════════════════════ */
+const KB = {
+  Finance: {
+    AR: {
+      quality: [
+        { id:'FIN-AR-Q1', sev:'c', title:'Date Format Validation', badge:'FBDI',
+          desc:'Transaction date must use DD-MON-YYYY format (e.g., 15-JAN-2024). Incorrect formats cause the entire FBDI batch to be rejected during Oracle AR import.',
+          field:'TRANSACTION_DATE', method:'Automated', owner:'Data Architect' },
+        { id:'FIN-AR-Q2', sev:'h', title:'No Special Characters in Name Fields', badge:'FBDI',
+          desc:'CUSTOMER_NAME and BILL_TO_CONTACT must contain only alphanumeric characters, hyphens, and apostrophes. Characters like @#$%& cause validation failures.',
+          field:'CUSTOMER_NAME', method:'Automated', owner:'Data Steward' },
+        { id:'FIN-AR-Q3', sev:'c', title:'Invoice Amount Cannot Be Zero', badge:'Manual',
+          desc:'All AR invoices must carry a non-zero positive amount. Zero-value invoices are auto-rejected during Oracle load validation.',
+          field:'AMOUNT', method:'Manual Review', owner:'Finance Lead' },
+        { id:'FIN-AR-Q4', sev:'m', title:'Currency Code — ISO 4217 Required', badge:'Auto',
+          desc:'CURRENCY_CODE must be a valid ISO 4217 code (USD, EUR, INR, etc.). Invalid codes block downstream GL posting.',
+          field:'CURRENCY_CODE', method:'Automated', owner:'Data Steward' }
+      ],
+      load: [
+        { id:'FIN-AR-L1', sev:'c', title:'Batch Size ≤ 50,000 Records', badge:'FBDI',
+          desc:'AR datasets exceeding 50,000 records must be split into multiple FBDI files. Larger batches cause ESS (Enterprise Scheduler Service) timeouts in Oracle Fusion Cloud.',
+          field:'Batch Config', method:'Automated', owner:'IT Lead' },
+        { id:'FIN-AR-L2', sev:'h', title:'Customer Master Required Before AR Load', badge:'Manual',
+          desc:'All customers must exist in Trading Community Architecture (TCA) before AR invoice data is loaded. Missing customers trigger foreign key constraint failures.',
+          field:'HZ_PARTIES', method:'Manual Review', owner:'Data Architect' },
+        { id:'FIN-AR-L3', sev:'h', title:'Customer Sites Before Transactions', badge:'FBDI',
+          desc:'AR Customer Sites (Bill-to, Ship-to) must be created first using HZ_PARTY_SITES FBDI before any AR transaction loading begins.',
+          field:'PARTY_SITE_ID', method:'Automated', owner:'Integration Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Legacy AR System', type:'src' },
+          { lbl:'AR Customers (TCA)', type:'src' },
+          { lbl:'AR Customer Sites', type:'cur' },
+          { lbl:'AR Invoices', type:'cur' },
+          { lbl:'GL Journals', type:'imp' },
+          { lbl:'Project Billing', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'AR Customer Sites → Project Contracts', desc:'Missing AR Customer Sites directly blocks Project Contract conversions — the most common blocker in Finance migrations.' },
+          { sev:'h', title:'AR Invoices → GL Reconciliation', desc:'AR Invoice load failures prevent automatic GL journal generation, blocking period-close reconciliation.' },
+          { sev:'m', title:'Currency in AR → Revaluation', desc:'Incorrect currency codes in AR invoices cause downstream foreign currency revaluation errors in GL.' }
+        ]
+      }
+    },
+    AP: {
+      quality: [
+        { id:'FIN-AP-Q1', sev:'c', title:'Supplier TIN/PAN Validation', badge:'FBDI',
+          desc:'Supplier Tax Identification Number must be validated against a reference list before load. Invalid TINs cause compliance failures in 1099/TDS reporting.',
+          field:'TAX_REGISTRATION_NUMBER', method:'Automated', owner:'Tax Team' },
+        { id:'FIN-AP-Q2', sev:'h', title:'Payment Terms Must Match Oracle Lookup', badge:'Auto',
+          desc:'PAYMENT_TERMS_NAME must match Oracle Payables lookups exactly. Legacy codes must be mapped to Oracle equivalents before migration.',
+          field:'PAYMENT_TERMS_NAME', method:'Automated', owner:'Finance Lead' },
+        { id:'FIN-AP-Q3', sev:'c', title:'Invoice Date Within Open Period', badge:'FBDI',
+          desc:'Invoice date must fall within an open accounting period. Invoices in closed periods are auto-rejected unless a period adjustment is approved by the controller.',
+          field:'INVOICE_DATE', method:'Manual Review', owner:'Finance Controller' }
+      ],
+      load: [
+        { id:'FIN-AP-L1', sev:'c', title:'Supplier Master Before Invoice Load', badge:'Manual',
+          desc:'All suppliers must be defined in Oracle Supplier Master before loading AP invoices. Reference integrity is enforced at DB level — no supplier, no invoice.',
+          field:'VENDOR_ID', method:'Manual Review', owner:'Procurement Team' },
+        { id:'FIN-AP-L2', sev:'h', title:'Supplier Bank Accounts Before Payments', badge:'FBDI',
+          desc:'Supplier bank account data must be loaded via CE_BANK_ACCT_USES FBDI before payment processing. Missing bank details block all EFT payments.',
+          field:'BANK_ACCOUNT_NUM', method:'Automated', owner:'Treasury Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Supplier Master', type:'src' },
+          { lbl:'AP Bank Accounts', type:'src' },
+          { lbl:'AP Invoices', type:'cur' },
+          { lbl:'Payment Processing', type:'cur' },
+          { lbl:'GL Posting', type:'imp' },
+          { lbl:'Cash Management', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Missing Bank Accounts → EFT Blocked', desc:'Missing supplier bank accounts blocks all EFT payment runs after go-live.' },
+          { sev:'h', title:'AP Invoice Failures → Period Close', desc:'AP Invoice failures prevent accounting period close processes.' }
+        ]
+      }
+    },
+    GL: {
+      quality: [
+        { id:'FIN-GL-Q1', sev:'c', title:'COA Segment Validation', badge:'FBDI',
+          desc:'All COA segments (Entity, Cost Centre, Account, Product) must validate against Oracle COA values. Invalid segments reject the entire journal batch.',
+          field:'SEGMENT1–SEGMENT6', method:'Automated', owner:'Finance Lead' },
+        { id:'FIN-GL-Q2', sev:'c', title:'Journals Must Balance — Debit = Credit', badge:'Auto',
+          desc:'Every GL journal batch must have exactly equal debits and credits. Out-of-balance batches fail at the GLDI interface table — no partial loads allowed.',
+          field:'ENTERED_DR / ENTERED_CR', method:'Automated', owner:'Finance Controller' },
+        { id:'FIN-GL-Q3', sev:'m', title:'Description Field 240 Character Limit', badge:'FBDI',
+          desc:'Journal line descriptions exceeding 240 characters are silently truncated by Oracle, causing audit trail completeness issues.',
+          field:'DESCRIPTION', method:'Automated', owner:'Data Steward' }
+      ],
+      load: [
+        { id:'FIN-GL-L1', sev:'c', title:'Target Period Must Be Open', badge:'Manual',
+          desc:'Accounting period must be Open or Future Entry before GL journal import. Verify period status at GL > Setup > Open/Close Periods.',
+          field:'PERIOD_NAME', method:'Manual Review', owner:'Finance Controller' },
+        { id:'FIN-GL-L2', sev:'h', title:'Ledger Currency Alignment', badge:'FBDI',
+          desc:'Journal currency must match the ledger functional currency, or valid conversion rates must be provided via GL_DAILY_RATES.',
+          field:'CURRENCY_CODE', method:'Automated', owner:'Finance Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Sub-Ledgers (AR/AP)', type:'src' },
+          { lbl:'GL Interface Tables', type:'src' },
+          { lbl:'Journal Import', type:'cur' },
+          { lbl:'GL Journals', type:'cur' },
+          { lbl:'Financial Reports', type:'imp' },
+          { lbl:'Regulatory Reporting', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Sub-ledger Transfer → Period Close', desc:'Sub-ledger transfer failure blocks GL period close process.' },
+          { sev:'h', title:'COA Mapping → P&L Misclassification', desc:'Incorrect COA mapping causes misclassification in P&L and Balance Sheet.' }
+        ]
+      }
+    },
+    Projects: {
+      quality: [
+        { id:'FIN-PJ-Q1', sev:'c', title:'Project Number Must Be Globally Unique', badge:'FBDI',
+          desc:'Project numbers must be globally unique across Oracle Projects. Duplicates cause record rejection during FBDI import validation.',
+          field:'SEGMENT1', method:'Automated', owner:'PMO Lead' },
+        { id:'FIN-PJ-Q2', sev:'h', title:'Project / Task Date Consistency', badge:'Auto',
+          desc:'Project start must precede finish date; task dates must fall within parent project range. Enforced during FBDI import.',
+          field:'START_DATE / COMPLETION_DATE', method:'Automated', owner:'Data Steward' }
+      ],
+      load: [
+        { id:'FIN-PJ-L1', sev:'c', title:'AR Customer Sites Required First', badge:'Manual',
+          desc:'Customer sites (Bill-to, Ship-to) in AR TCA must exist before loading Project Contracts. This is the #1 blocker for Project conversion programmes.',
+          field:'BILL_TO_ADDRESS_ID', method:'Manual Review', owner:'Data Architect' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'AR Customers', type:'src' },
+          { lbl:'Project Definition', type:'src' },
+          { lbl:'Project Tasks', type:'cur' },
+          { lbl:'Project Contracts', type:'cur' },
+          { lbl:'AR Invoice Gen', type:'imp' },
+          { lbl:'Revenue Recognition', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'AR Customer Sites → Project Contracts', desc:'Missing AR Customer Sites directly blocks Project Contract loading — most common blocker.' },
+          { sev:'h', title:'Task Hierarchy → Resource Assignment', desc:'Incomplete task hierarchy prevents resource assignment migration.' }
+        ]
+      }
+    }
+  },
+  SCM: {
+    Inventory: {
+      quality: [
+        { id:'SCM-INV-Q1', sev:'c', title:'Item Number Format Validation', badge:'FBDI',
+          desc:'Item numbers must follow the company segment structure defined in PDH. Mixed case and special characters are not permitted. Max 40 characters.',
+          field:'ITEM_NUMBER', method:'Automated', owner:'Item Master Team' },
+        { id:'SCM-INV-Q2', sev:'h', title:'UOM Code Must Be Valid Oracle UOM', badge:'Auto',
+          desc:'Unit of Measure codes must match Oracle Inventory UOMs exactly. Legacy codes (e.g. "EACH" vs "Ea") must be mapped before migration.',
+          field:'UNIT_OF_MEASURE', method:'Automated', owner:'Data Steward' },
+        { id:'SCM-INV-Q3', sev:'c', title:'On-Hand Quantity Must Be Non-Negative', badge:'FBDI',
+          desc:'Initial on-hand quantities loaded via FBDI must be zero or positive. Negative quantities require separate adjustment transactions after go-live.',
+          field:'PRIMARY_QUANTITY', method:'Automated', owner:'Inventory Lead' }
+      ],
+      load: [
+        { id:'SCM-INV-L1', sev:'c', title:'PDH Item Master Required First', badge:'Manual',
+          desc:'All items must be defined and approved in PDH before loading inventory transactions, on-hand balances, or item cost data.',
+          field:'INVENTORY_ITEM_ID', method:'Manual Review', owner:'PDH Team' },
+        { id:'SCM-INV-L2', sev:'h', title:'Inventory Org Setup Before Item-Org', badge:'FBDI',
+          desc:'Org parameters, sub-inventories, and locators must be fully configured before loading item-org assignments or inventory transactions.',
+          field:'ORGANIZATION_CODE', method:'Automated', owner:'IT Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'PDH Item Master', type:'src' },
+          { lbl:'Inventory Orgs', type:'src' },
+          { lbl:'On-Hand Balances', type:'cur' },
+          { lbl:'Inv Transactions', type:'cur' },
+          { lbl:'Cost Management', type:'imp' },
+          { lbl:'Order Management', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Missing PDH → All Inv Blocked', desc:'Missing PDH item master blocks all inventory and procurement transactions.' },
+          { sev:'h', title:'On-Hand Errors → COGS Impact', desc:'On-hand balance errors propagate to COGS and gross margin calculations.' }
+        ]
+      }
+    },
+    Procurement: {
+      quality: [
+        { id:'SCM-PR-Q1', sev:'h', title:'Supplier Site Code Format', badge:'FBDI',
+          desc:'Supplier site codes must be unique per supplier and follow the naming convention: [SUPPLIER_CODE]-[SITE_TYPE]-[SEQ]. Example: ACME-PURCHASE-001.',
+          field:'VENDOR_SITE_CODE', method:'Automated', owner:'Procurement Team' },
+        { id:'SCM-PR-Q2', sev:'c', title:'PO Line Amount = Qty × Unit Price', badge:'Auto',
+          desc:'PO line amounts must equal QUANTITY × UNIT_PRICE exactly. The system validates this during FBDI import with rounding enforced to 2 decimal places.',
+          field:'AMOUNT', method:'Automated', owner:'Finance Lead' }
+      ],
+      load: [
+        { id:'SCM-PR-L1', sev:'c', title:'Approved Supplier List Before PO Load', badge:'Manual',
+          desc:'Suppliers must appear in the Approved Supplier List (ASL) for controlled items before Purchase Orders can be created.',
+          field:'ASL_STATUS', method:'Manual Review', owner:'Procurement Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Supplier Master', type:'src' },
+          { lbl:'Approved Supplier List', type:'src' },
+          { lbl:'Purchase Orders', type:'cur' },
+          { lbl:'Goods Receipts', type:'cur' },
+          { lbl:'AP Inv Matching', type:'imp' },
+          { lbl:'GL Encumbrance', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Missing ASL → PO Creation Blocked', desc:'Missing ASL entries block PO creation for restricted and controlled items.' },
+          { sev:'h', title:'PO-Invoice Mismatch → 3-Way Match Fail', desc:'PO-Invoice amount mismatches cause 3-way match validation failures.' }
+        ]
+      }
+    }
+  },
+  HCM: {
+    Employees: {
+      quality: [
+        { id:'HCM-EMP-Q1', sev:'c', title:'National ID Format Validation', badge:'FBDI',
+          desc:'National Identifier must match country-specific format. Indian PAN: AAAAA9999A; Aadhaar: 12 digits; US SSN: 9 digits. Invalid IDs cause record rejection.',
+          field:'NATIONAL_IDENTIFIER', method:'Automated', owner:'HR Data Team' },
+        { id:'HCM-EMP-Q2', sev:'h', title:'Hire Date Must Be Historical', badge:'Auto',
+          desc:'Employee hire dates loaded during migration must be on or before the system go-live date. Future hire dates are not permitted in migration data loads.',
+          field:'DATE_START', method:'Automated', owner:'HR Lead' },
+        { id:'HCM-EMP-Q3', sev:'m', title:'Grade vs Job Consistency', badge:'FBDI',
+          desc:'Employee grade must be valid for the specified job. Invalid grade-job combinations trigger payroll calculation errors during the first pay run.',
+          field:'GRADE_CODE / JOB_CODE', method:'Manual Review', owner:'Compensation Team' }
+      ],
+      load: [
+        { id:'HCM-EMP-L1', sev:'c', title:'Org Hierarchy Must Exist First', badge:'Manual',
+          desc:'Business Units, Legal Entities, Departments, and Locations must all be fully configured before loading any employee records — the most critical HCM dependency.',
+          field:'ORGANIZATION_ID', method:'Manual Review', owner:'HR Architecture Lead' },
+        { id:'HCM-EMP-L2', sev:'c', title:'Jobs and Positions Before Assignments', badge:'FBDI',
+          desc:'Job definitions and position structures must be created before loading employee assignment records. Missing jobs cause assignment FK failures during FBDI import.',
+          field:'JOB_ID / POSITION_ID', method:'Automated', owner:'HRIS Team' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Legacy HRMS', type:'src' },
+          { lbl:'Org Hierarchy', type:'src' },
+          { lbl:'Jobs & Grades', type:'cur' },
+          { lbl:'Employee Records', type:'cur' },
+          { lbl:'Payroll Assignments', type:'imp' },
+          { lbl:'Benefits Enrollment', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Missing Org Hierarchy → Hard Blocker', desc:'Missing org hierarchy is a hard blocker — prevents all employee record loading.' },
+          { sev:'h', title:'Grade-Job Mismatch → Wrong Payroll', desc:'Incorrect grade-job mapping causes the first payroll run to produce incorrect results.' }
+        ]
+      }
+    },
+    Payroll: {
+      quality: [
+        { id:'HCM-PAY-Q1', sev:'c', title:'Employee Bank Account Validation', badge:'FBDI',
+          desc:'Bank account number and IFSC/routing code must be validated against the bank master before payroll processing. Invalid accounts block all EFT salary payments.',
+          field:'BANK_ACCOUNT_NUMBER', method:'Automated', owner:'Payroll Team' },
+        { id:'HCM-PAY-Q2', sev:'h', title:'Salary Basis Must Match Pay Frequency', badge:'Auto',
+          desc:'Salary element entry must correspond exactly to the employee payroll frequency (Monthly, Bi-weekly, Weekly). Mismatch causes incorrect calculations and overpayment risk.',
+          field:'PAY_BASIS / PAYROLL_NAME', method:'Automated', owner:'Compensation Lead' }
+      ],
+      load: [
+        { id:'HCM-PAY-L1', sev:'c', title:'Employee Assignments Required First', badge:'Manual',
+          desc:'Valid employee assignments (position, department, grade, salary) must exist before any payroll elements can be loaded for the employee.',
+          field:'ASSIGNMENT_ID', method:'Manual Review', owner:'HRIS Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Employee Assignments', type:'src' },
+          { lbl:'Payroll Elements', type:'src' },
+          { lbl:'Bank Accounts', type:'cur' },
+          { lbl:'Payroll Runs', type:'cur' },
+          { lbl:'GL Costing Journal', type:'imp' },
+          { lbl:'Tax & Statutory', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Missing Assignments → Payroll Blocked', desc:'Missing employee assignments blocks payroll element loading entirely.' },
+          { sev:'h', title:'Invalid Bank Accounts → EFT Failure', desc:'Invalid bank accounts cause EFT payment run failures at treasury stage.' }
+        ]
+      }
+    },
+    Benefits: {
+      quality: [
+        { id:'HCM-BEN-Q1', sev:'h', title:'Enrollment Date Within Plan Year', badge:'FBDI',
+          desc:'Benefits enrollment dates must fall within the plan year and open enrollment window. Backdated enrollments outside the window require HR director approval.',
+          field:'EFFECTIVE_START_DATE', method:'Automated', owner:'Benefits Admin' },
+        { id:'HCM-BEN-Q2', sev:'m', title:'Dependent Relationship Code Validation', badge:'Auto',
+          desc:'Dependent relationship types must match Oracle lookup codes (Spouse, Child, Parent, Domestic Partner). Invalid codes cause coverage calculation errors.',
+          field:'RELATIONSHIP_CODE', method:'Automated', owner:'HR Data Team' }
+      ],
+      load: [
+        { id:'HCM-BEN-L1', sev:'c', title:'Benefits Plan Design Must Be Published', badge:'Manual',
+          desc:'Benefits plans, options, coverage structures, and cost tiers must be fully designed and published in Oracle Benefits before any employee enrollment data can be loaded.',
+          field:'PLAN_ID / OPTION_ID', method:'Manual Review', owner:'Benefits Architect' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Plan Design', type:'src' },
+          { lbl:'Employee Demographics', type:'src' },
+          { lbl:'Benefits Enrollment', type:'cur' },
+          { lbl:'Life Events', type:'cur' },
+          { lbl:'Payroll Deductions', type:'imp' },
+          { lbl:'Carrier Interfaces', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Missing Plan Design → Enrollment Blocked', desc:'Missing plan design is a complete blocker for all enrollment loading.' },
+          { sev:'h', title:'Dependent Data → Coverage Calculation Fail', desc:'Incorrect dependent data causes coverage amount calculation failures.' }
+        ]
+      }
+    }
+  },
+
+  /* ══════════════════════════════════════
+     PDH — Product Data Hub
+  ══════════════════════════════════════ */
+  PDH: {
+    ItemMaster: {
+      name: 'Item Master',
+      quality: [
+        { id:'PDH-IM-Q1', sev:'c', badge:'FBDI', title:'Blank Item Number — Not Allowed',
+          desc:'Items with a blank Item Number are rejected entirely during FBDI import. Item Number is mandatory. Current count: 0 errors.',
+          field:'ITEM_NUMBER', method:'Automated', owner:'Item Master Team' },
+        { id:'PDH-IM-Q2', sev:'c', badge:'FBDI', title:'Blank Item Description — Not Allowed',
+          desc:'152,876 items have a blank Item Description. Although not a hard block on load, blank descriptions cause audit and reporting gaps. Must be resolved before go-live.',
+          field:'DESCRIPTION', method:'Manual Review', owner:'Data Steward' },
+        { id:'PDH-IM-Q3', sev:'c', badge:'FBDI', title:'Blank Organization — Not Allowed',
+          desc:'Items with no Organization assigned cannot be loaded. Organization is a mandatory field. Current count: 0 errors.',
+          field:'ORGANIZATION_CODE', method:'Automated', owner:'Item Master Team' },
+        { id:'PDH-IM-Q4', sev:'c', badge:'FBDI', title:'Blank Primary Unit of Measure — Not Allowed',
+          desc:'Primary UOM is mandatory for all items. Items without a UOM are rejected during FBDI import. Current count: 0 errors.',
+          field:'PRIMARY_UOM_CODE', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-Q5', sev:'c', badge:'FBDI', title:'Duplicate Item Numbers — Not Allowed',
+          desc:'10 items have duplicate Item Numbers. Duplicates cause FK constraint failures and must be resolved before migration. Identify and consolidate or retire duplicates.',
+          field:'ITEM_NUMBER', method:'Automated', owner:'Item Master Team' },
+        { id:'PDH-IM-Q6', sev:'c', badge:'FBDI', title:'Blank Item Status — Not Allowed',
+          desc:'All items must have a valid Item Status (Active, Inactive, Obsolete, etc.). Items without status cannot be transacted. Current count: 0 errors.',
+          field:'ITEM_STATUS', method:'Automated', owner:'PDH Team' },
+        { id:'PDH-IM-Q7', sev:'c', badge:'Auto', title:'Purchasable Must Be No When Purchased Is No',
+          desc:'If the Purchased attribute is set to No, then Purchasable must also be set to No. Violation causes attribute inconsistency errors. Current count: 0 errors.',
+          field:'PURCHASABLE / PURCHASED', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-Q8', sev:'c', badge:'Auto', title:'Customer Order Enabled Must Be No When Customer Ordered Is No',
+          desc:'Customer Order Enabled cannot be Yes if Customer Ordered is No. Inconsistent flag combination is rejected during validation. Current count: 0 errors.',
+          field:'CUSTOMER_ORDER_ENABLED / CUSTOMER_ORDERED', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-Q9', sev:'c', badge:'Auto', title:'Invoice Enabled Must Be No When Invoiced Is No',
+          desc:'Invoice Enabled must be set to No when Invoiced is set to No. Violating this constraint causes AR integration failures. Current count: 0 errors.',
+          field:'INVOICE_ENABLED / INVOICED', method:'Automated', owner:'Finance Lead' },
+        { id:'PDH-IM-Q10', sev:'c', badge:'Auto', title:'Transaction/Stock/WIP/Contract Flags Must Be No When Inventory Item Is No',
+          desc:'When Inventory Item is set to No, all of these attributes must also be No: Transaction Enabled, Stocked, Build in WIP, Contract Manufacturing. Current count: 0 errors.',
+          field:'INVENTORY_ITEM / TRANSACTION_ENABLED / STOCK_ENABLED / BUILD_IN_WIP', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-Q11', sev:'c', badge:'Auto', title:'Process Execution Enabled Cannot Be Yes If Not Inventory Item',
+          desc:'The Process Execution Enabled attribute cannot be set to Yes if Inventory Item is set to No. Violating this causes manufacturing process errors. Current count: 0 errors.',
+          field:'PROCESS_EXECUTION_ENABLED / INVENTORY_ITEM', method:'Automated', owner:'Manufacturing Lead' },
+        { id:'PDH-IM-Q12', sev:'c', badge:'Auto', title:'Internal Orders Enabled Requires Internal Ordered — 43,607 Items Affected',
+          desc:'43,607 items have Internal Orders Enabled set to Yes but Internal Ordered is set to No. This is the highest volume error. Must be resolved before load — causes internal order processing failures.',
+          field:'INTERNAL_ORDERS_ENABLED / INTERNAL_ORDERED', method:'Manual Review', owner:'Data Steward' },
+        { id:'PDH-IM-Q13', sev:'c', badge:'Auto', title:'Transaction Enabled Cannot Be Yes If Not Inventory Item',
+          desc:'The Transaction Enabled attribute cannot be set to Yes if the item is not an Inventory Item. Violation blocks all inventory transactions. Current count: 0 errors.',
+          field:'TRANSACTION_ENABLED / INVENTORY_ITEM', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-Q14', sev:'c', badge:'Auto', title:'Non-Stocked Items Cannot Be Transaction Enabled',
+          desc:'Items that cannot be stocked cannot have Transaction Enabled set to Yes. Stocked is a prerequisite for Transaction Enabled. Current count: 0 errors.',
+          field:'STOCK_ENABLED / TRANSACTION_ENABLED', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-Q15', sev:'c', badge:'Auto', title:'Orderable On Web Requires Customer Orders Enabled',
+          desc:'Orderable On The Web can only be enabled if Customer Orders is also enabled. Violating this blocks e-commerce order processing. Current count: 0 errors.',
+          field:'WEB_STATUS / CUSTOMER_ORDER_ENABLED', method:'Automated', owner:'Order Management Lead' },
+        { id:'PDH-IM-Q16', sev:'c', badge:'Auto', title:'Pick Components Cannot Be Yes When Internal Ordered Is Yes',
+          desc:'Pick Components cannot be set to Yes when Internal Ordered is set to Yes. This combination causes warehouse pick logic conflicts. Current count: 0 errors.',
+          field:'PICK_COMPONENTS / INTERNAL_ORDERED', method:'Automated', owner:'Warehouse Lead' },
+        { id:'PDH-IM-Q17', sev:'c', badge:'Auto', title:'Check Material Shortage Requires Transaction Enabled',
+          desc:'Check Material Shortage cannot be set unless the item is Transaction Enabled. Non-transactable items cannot trigger shortage alerts. Current count: 0 errors.',
+          field:'CHECK_SHORTAGES / TRANSACTION_ENABLED', method:'Automated', owner:'Supply Chain Lead' }
+      ],
+      load: [
+        { id:'PDH-IM-L1', sev:'c', badge:'FBDI', title:'Scheduled Process: Item Import Job — How to Run',
+          desc:'Step 1: Load CSV via "Load Interface File for Import" into EGP_SYSTEM_ITEMS_INTERFACE. Step 2: Navigate to Manage Item Batches in Items work area. Step 3: Go to Scheduled Processes → Schedule New Process → Select "Item Import". Step 4: Enter Batch ID and submit. Step 5: Monitor in Search Results. Step 6: If errors, review log → Manage Item Batches → click Batch Name → Imported tab → fix rows → re-upload.',
+          field:'EGP_SYSTEM_ITEMS_INTERFACE', method:'Manual Review', owner:'IT Lead' },
+        { id:'PDH-IM-L2', sev:'c', badge:'FBDI', title:'Mandatory Column: TRANSACTION_TYPE',
+          desc:'Must be set to CREATE for new items. This is the first mandatory column in every FBDI row. Without this the entire row is ignored by the import process.',
+          field:'TRANSACTION_TYPE', method:'Automated', owner:'IT Lead' },
+        { id:'PDH-IM-L3', sev:'c', badge:'FBDI', title:'Mandatory Column: BATCH_ID',
+          desc:'The Batch ID from Manage Item Batches page. This links each FBDI row to an import batch. All rows in one file must use the same Batch ID. BATCH_ID takes priority over BATCH_NUMBER.',
+          field:'BATCH_ID', method:'Automated', owner:'IT Lead' },
+        { id:'PDH-IM-L4', sev:'c', badge:'FBDI', title:'Mandatory Column: ITEM_NUMBER',
+          desc:'Unique item number — max 300 characters, no special characters. Must not be blank or duplicate within the same org. This is the primary key of the Item Master FBDI.',
+          field:'ITEM_NUMBER', method:'Automated', owner:'Item Master Team' },
+        { id:'PDH-IM-L5', sev:'c', badge:'FBDI', title:'Mandatory Column: ORGANIZATION_CODE',
+          desc:'Code that identifies the inventory organization (max 18 chars). Must match a valid org in Manage Inventory Organizations (Setup and Maintenance). Cannot be blank.',
+          field:'ORGANIZATION_CODE', method:'Automated', owner:'IT Lead' },
+        { id:'PDH-IM-L6', sev:'c', badge:'FBDI', title:'Mandatory Column: DESCRIPTION',
+          desc:'Item description — max 240 characters. Cannot be blank. Descriptions exceeding 240 chars are silently truncated. Must be cleansed at source.',
+          field:'DESCRIPTION', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-L7', sev:'c', badge:'FBDI', title:'Mandatory Column: ITEM_CLASS_NAME (ITEM_CATALOG_GROUP_NAME)',
+          desc:'Unique item class name — max 820 chars. Typically "Root Item Class" for base items. Must match a valid item class in Manage Item Classes (FSM). Drives which attributes and templates apply.',
+          field:'ITEM_CATALOG_GROUP_NAME', method:'Manual Review', owner:'PDH Team' },
+        { id:'PDH-IM-L8', sev:'c', badge:'FBDI', title:'Mandatory Column: PRIMARY_UOM_NAME',
+          desc:'Primary Unit of Measure — max 25 chars. Must match a valid UOM in Manage Units of Measure (FSM). All legacy UOM codes must be cross-mapped before load. Cannot be blank.',
+          field:'PRIMARY_UOM_NAME', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-L9', sev:'h', badge:'FBDI', title:'Mandatory Column: SOURCE_SYSTEM_CODE',
+          desc:'Source system identifier — max 30 chars. Use "PIMDH" for Product Information Management Data Hub. This identifies whether the batch is a PIM or Non-PIM batch.',
+          field:'SOURCE_SYSTEM_CODE', method:'Automated', owner:'IT Lead' },
+        { id:'PDH-IM-L10', sev:'h', badge:'FBDI', title:'Optional but Recommended: LIFECYCLE_PHASE (CURRENT_PHASE_CODE)',
+          desc:'Name of lifecycle phase — max 120 chars. Typical values: Design, Prototype, Production, Obsolete. Must match Manage Lifecycle Phases in FSM. Defaults to first phase if blank.',
+          field:'CURRENT_PHASE_CODE', method:'Manual Review', owner:'PDH Team' },
+        { id:'PDH-IM-L11', sev:'h', badge:'FBDI', title:'Optional but Recommended: ITEM_STATUS (INVENTORY_ITEM_STATUS_CODE)',
+          desc:'Item transaction status — max 10 chars. Typical values: Active, Inactive, Obsolete. Must match Manage Item Statuses in FSM. Controls which transactions are allowed for the item.',
+          field:'INVENTORY_ITEM_STATUS_CODE', method:'Manual Review', owner:'PDH Team' },
+        { id:'PDH-IM-L12', sev:'c', badge:'FBDI', title:'FBDI Interface Table: EGP_SYSTEM_ITEMS_INTERFACE',
+          desc:'The main FBDI table for Item Master bulk load. Control file: EgpSystemItemsInterface.ctl. Load via "Load Interface File for Import" scheduled process. After load, submit "Item Import" to move data from interface to application tables.',
+          field:'EGP_SYSTEM_ITEMS_INTERFACE', method:'Automated', owner:'IT Lead' },
+        { id:'PDH-IM-L13', sev:'h', badge:'FBDI', title:'Date Format in FBDI: YYYY/MM/DD',
+          desc:'All date fields in the Item Import FBDI template must use YYYY/MM/DD format. Date-time fields use YYYY/MM/DD HH:MM:SS.SS. This differs from other Oracle FBDI templates which use DD-MON-YYYY.',
+          field:'All DATE columns', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IM-L14', sev:'h', badge:'FBDI', title:'Batch Size ≤ 2,000 Items Per FBDI File',
+          desc:'Large item master files cause ESS import timeouts. Split into batches of 2,000 items maximum. Validate each batch output report (Submitted vs Imported vs Rejected) before submitting the next batch.',
+          field:'Batch Config', method:'Automated', owner:'IT Lead' },
+        { id:'PDH-IM-L15', sev:'h', badge:'Manual', title:'PDH Item Master Must Load Before All SCM Modules',
+          desc:'PDH Item Master is the single source of truth. It must be fully loaded and validated before Inventory, Procurement, or Order Management migration begins. No partial loads.',
+          field:'INVENTORY_ITEM_ID', method:'Manual Review', owner:'Enterprise Architect' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'1. Enterprise Structure', type:'src' },
+          { lbl:'2. UOM / Reference Data', type:'src' },
+          { lbl:'3. Item Class / Attributes Setup', type:'src' },
+          { lbl:'4. Item Master', type:'cur' },
+          { lbl:'5. Item Categories', type:'cur' },
+          { lbl:'6. Item EFF Attributes', type:'cur' },
+          { lbl:'7. Item Revisions', type:'cur' },
+          { lbl:'8. Item Structures (BOM)', type:'imp' },
+          { lbl:'9. Item Org Assignments', type:'imp' },
+          { lbl:'10. Item Costs', type:'imp' },
+          { lbl:'11. Supplier / Sourcing', type:'imp' },
+          { lbl:'12. Inventory On-hand', type:'imp' },
+          { lbl:'13. Transactions (PO, SO, etc.)', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Enterprise Structure → Blocks Everything', desc:'Legal Entities, Business Units, and Inventory Orgs must be fully configured before any PDH or SCM data can be loaded. This is step 1 with no exceptions.' },
+          { sev:'c', title:'UOM / Reference Data → Blocks Item Master', desc:'All Units of Measure, lookup codes, and reference data must be set up in Oracle before Item Master can be loaded. Invalid UOM codes cause immediate FBDI rejection.' },
+          { sev:'c', title:'Item Class / Attributes Setup → Blocks Item Master', desc:'Item classes, attribute groups, and templates must be published in FSM before items can be assigned to them. Missing item class causes ITEM_CATALOG_GROUP_NAME failure.' },
+          { sev:'c', title:'Item Master → Blocks All Downstream Steps (4–13)', desc:'Steps 4 onwards all depend on Item Master. Nothing in the PDH conversion chain can proceed until Item Master is fully loaded and validated.' },
+          { sev:'h', title:'Item Categories → Blocks Procurement & Sourcing', desc:'Items without category assignments cannot be used in Procurement workflows. Item Categories (step 5) must complete before Supplier/Sourcing (step 11).' },
+          { sev:'h', title:'Item Revisions → Blocks Item Structures (BOM)', desc:'Item Structures reference specific item revisions. Step 7 (Item Revisions) must complete before Step 8 (BOM) can be loaded.' },
+          { sev:'h', title:'Item Org Assignments → Blocks On-hand & Transactions', desc:'Items must be assigned to inventory orgs (step 9) before on-hand balances (step 12) or any transactions (step 13) can be processed for that org.' },
+          { sev:'h', title:'Item Costs → Blocks Financial Reporting', desc:'Item Costs (step 10) must be loaded before any inventory transactions (step 13) are posted, otherwise COGS and inventory valuation will be zero or incorrect.' },
+          { sev:'m', title:'Inventory On-hand → Must Load Before Go-Live Transactions', desc:'On-hand balances (step 12) must be loaded and reconciled before any live PO/SO transactions (step 13) begin at go-live to avoid negative stock and valuation issues.' }
+        ]
+      }
+    },
+    ItemEff: {
+      name: 'Item Eff',
+      quality: [
+        { id:'PDH-IE-Q1', sev:'c', badge:'FBDI', title:'Eff Date Format — DD-MON-YYYY Required',
+          desc:'All Eff start and end dates must use DD-MON-YYYY format. Invalid date formats cause the entire FBDI batch to be rejected.',
+          field:'EFFECTIVE_FROM / EFFECTIVE_TO', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IE-Q2', sev:'h', badge:'Auto', title:'Eff Date Range Consistency',
+          desc:'EFFECTIVE_FROM must be earlier than EFFECTIVE_TO. Overlapping Eff records for the same item cause duplicate processing errors.',
+          field:'EFFECTIVE_FROM / EFFECTIVE_TO', method:'Automated', owner:'PDH Team' },
+        { id:'PDH-IE-Q3', sev:'m', badge:'FBDI', title:'Item Must Exist in Item Master Before Eff Load',
+          desc:'Eff records cannot be created for items that do not exist in the Item Master. Always validate item existence before loading Eff data.',
+          field:'ITEM_NUMBER', method:'Manual Review', owner:'Data Steward' }
+      ],
+      load: [
+        { id:'PDH-IE-L1', sev:'c', badge:'Manual', title:'Item Master Required Before Eff Load',
+          desc:'Item Master must be fully loaded and validated before loading Item Eff records. FK constraint enforced at DB level.',
+          field:'INVENTORY_ITEM_ID', method:'Manual Review', owner:'PDH Team' },
+        { id:'PDH-IE-L2', sev:'h', badge:'FBDI', title:'Load One Eff Version Per Batch',
+          desc:'When multiple Eff versions exist for an item, load them in chronological order. Loading out of sequence causes version conflict errors.',
+          field:'VERSION_SEQUENCE', method:'Automated', owner:'IT Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Legacy ERP (Item Versions)', type:'src' },
+          { lbl:'PDH Item Master', type:'src' },
+          { lbl:'Item Eff', type:'cur' },
+          { lbl:'Item Structure (BOM)', type:'imp' },
+          { lbl:'Manufacturing', type:'imp' },
+          { lbl:'Order Management', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Invalid Eff Dates → BOM Errors', desc:'Incorrect Eff dates cause Item Structure (BOM) to reference wrong item versions in manufacturing.' },
+          { sev:'h', title:'Overlapping Eff → Order Processing Failures', desc:'Overlapping Eff records cause order management to pick wrong item revisions at order time.' }
+        ]
+      }
+    },
+    ItemCategories: {
+      name: 'Item Categories',
+      quality: [
+        { id:'PDH-IC-Q1', sev:'h', badge:'FBDI', title:'Every Item Must Have At Least One Category',
+          desc:'Every item must be assigned to at least one category in each required catalog. Uncategorised items cannot be used in Procurement or Order Management.',
+          field:'CATEGORY_ID', method:'Automated', owner:'PDH Team' },
+        { id:'PDH-IC-Q2', sev:'m', badge:'Auto', title:'Category Must Exist in Target Catalog',
+          desc:'Category codes must match valid values in the Oracle target catalog. Legacy category codes must be cross-mapped before migration.',
+          field:'CATEGORY_SET_NAME / CATEGORY_NAME', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IC-Q3', sev:'m', badge:'FBDI', title:'No Duplicate Category Assignments',
+          desc:'An item cannot be assigned to the same category twice within the same catalog. Duplicate assignments cause validation failures during FBDI import.',
+          field:'CATEGORY_ID', method:'Automated', owner:'Data Steward' }
+      ],
+      load: [
+        { id:'PDH-IC-L1', sev:'c', badge:'Manual', title:'Item Master and Category Setup Required First',
+          desc:'Both the Item Master and the catalog/category structure must be fully set up in Oracle before loading item-category assignments.',
+          field:'INVENTORY_ITEM_ID / CATEGORY_ID', method:'Manual Review', owner:'PDH Team' },
+        { id:'PDH-IC-L2', sev:'h', badge:'FBDI', title:'Load Default Category First',
+          desc:'If an item has a default category, load it first before additional category assignments. Oracle sets procurement and costing rules from the default category.',
+          field:'DEFAULT_CATEGORY_FLAG', method:'Automated', owner:'IT Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Legacy Category Structure', type:'src' },
+          { lbl:'PDH Item Master', type:'src' },
+          { lbl:'Item Categories', type:'cur' },
+          { lbl:'Procurement Rules', type:'imp' },
+          { lbl:'Sourcing', type:'imp' },
+          { lbl:'Reporting', type:'imp' }
+        ],
+        impacts: [
+          { sev:'h', title:'Missing Categories → Procurement Blocked', desc:'Items without category assignments cannot be sourced or purchased in Oracle Procurement.' },
+          { sev:'m', title:'Wrong Category → Incorrect Costing Rules', desc:'Incorrect category assignment applies wrong costing method and procurement rules to the item.' }
+        ]
+      }
+    },
+    ItemStructure: {
+      name: 'Item Structure',
+      quality: [
+        { id:'PDH-IS-Q1', sev:'c', badge:'FBDI', title:'Parent Item Must Exist Before Component Load',
+          desc:'The parent assembly item must exist and be approved in Item Master before any component lines can be loaded for that structure.',
+          field:'ASSEMBLY_ITEM_NUMBER', method:'Automated', owner:'PDH Team' },
+        { id:'PDH-IS-Q2', sev:'c', badge:'Auto', title:'No Circular BOM References',
+          desc:'An item cannot be both a parent and a component of itself (direct or indirect circular reference). Oracle enforces this at load time — circular BOMs cause import failure.',
+          field:'COMPONENT_ITEM_NUMBER', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IS-Q3', sev:'h', badge:'FBDI', title:'Component Quantity Must Be Positive',
+          desc:'All component quantities must be greater than zero. Zero or negative quantities are rejected during FBDI import.',
+          field:'COMPONENT_QUANTITY', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IS-Q4', sev:'m', badge:'Auto', title:'BOM Eff Must Align With Item Eff',
+          desc:'Structure Eff dates must fall within the parent item Eff range. Misaligned dates cause manufacturing scheduling errors.',
+          field:'Eff_DATE', method:'Automated', owner:'PDH Team' }
+      ],
+      load: [
+        { id:'PDH-IS-L1', sev:'c', badge:'Manual', title:'All Components Must Exist in Item Master First',
+          desc:'Every component referenced in the structure must already exist in the Item Master. Load all items before loading any BOM/structure data.',
+          field:'COMPONENT_ITEM_NUMBER', method:'Manual Review', owner:'PDH Team' },
+        { id:'PDH-IS-L2', sev:'h', badge:'FBDI', title:'Load Single-Level BOM Before Multi-Level',
+          desc:'Load top-level assemblies first, then sub-assemblies, then components. Loading multi-level BOMs out of sequence causes FK failures.',
+          field:'BOM_LEVEL', method:'Automated', owner:'IT Lead' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Legacy BOM Data', type:'src' },
+          { lbl:'PDH Item Master', type:'src' },
+          { lbl:'Item Structure (BOM)', type:'cur' },
+          { lbl:'Manufacturing Orders', type:'imp' },
+          { lbl:'Cost Rollup', type:'imp' },
+          { lbl:'Supply Chain Planning', type:'imp' }
+        ],
+        impacts: [
+          { sev:'c', title:'Circular BOM → Manufacturing Order Failure', desc:'Circular BOM references cause manufacturing order explosion to loop infinitely — hard system error.' },
+          { sev:'h', title:'Missing Components → Cost Rollup Incomplete', desc:'Missing component items cause cost rollup to produce understated assembly costs across all levels.' }
+        ]
+      }
+    },
+    ItemRelationship: {
+      name: 'Item Relationship',
+      quality: [
+        { id:'PDH-IR-Q1', sev:'h', badge:'FBDI', title:'Relationship Type Must Be Valid Oracle Lookup',
+          desc:'Relationship type code (Substitute, Cross-sell, Up-sell, Service, etc.) must match Oracle item relationship lookup values exactly.',
+          field:'RELATIONSHIP_TYPE_CODE', method:'Automated', owner:'Data Steward' },
+        { id:'PDH-IR-Q2', sev:'h', badge:'Auto', title:'Both Items Must Exist in Item Master',
+          desc:'Both the source item and the related item must exist in the Item Master before the relationship can be created.',
+          field:'ITEM_NUMBER / RELATED_ITEM_NUMBER', method:'Automated', owner:'PDH Team' },
+        { id:'PDH-IR-Q3', sev:'m', badge:'FBDI', title:'Reciprocal Relationship Consistency',
+          desc:'For substitute relationships, the reciprocal relationship should also exist (A→B and B→A). One-directional substitutes cause issues in supply chain planning.',
+          field:'RECIPROCAL_FLAG', method:'Manual Review', owner:'Data Steward' }
+      ],
+      load: [
+        { id:'PDH-IR-L1', sev:'c', badge:'Manual', title:'Item Master Must Be Complete Before Relationships',
+          desc:'All items involved in relationships must be fully loaded and approved in Item Master before loading any relationship records.',
+          field:'INVENTORY_ITEM_ID / RELATED_ITEM_ID', method:'Manual Review', owner:'PDH Team' },
+        { id:'PDH-IR-L2', sev:'m', badge:'FBDI', title:'Load Substitute Relationships Before Planning Run',
+          desc:'Item substitute relationships must be loaded before the first supply chain planning run. Late loading causes planning to miss valid substitution options.',
+          field:'RELATIONSHIP_TYPE_CODE', method:'Automated', owner:'Supply Chain Team' }
+      ],
+      lineage: {
+        nodes: [
+          { lbl:'Legacy Item Relationships', type:'src' },
+          { lbl:'PDH Item Master', type:'src' },
+          { lbl:'Item Relationships', type:'cur' },
+          { lbl:'Supply Chain Planning', type:'imp' },
+          { lbl:'Order Promising', type:'imp' },
+          { lbl:'Sales Configurator', type:'imp' }
+        ],
+        impacts: [
+          { sev:'h', title:'Missing Substitute Relationships → Planning Gap', desc:'Without substitute relationships, supply chain planning cannot use alternative items during shortages.' },
+          { sev:'m', title:'Incorrect Relationship Type → Wrong Sales Recommendations', desc:'Wrong relationship type codes cause incorrect cross-sell and up-sell recommendations in Order Management.' }
+        ]
+      }
+    }
+  }
+};
+
+/* AI-learned entries (added at runtime) */
+const Learned = [];
+const KB_API_URL = 'http://localhost:3000/api/knowledge';
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let sbOpen = false;
+let curMod = null, curSub = null, curTab = 'quality';
+let aiQueryCount = 0;
+let lastAIAnswer = null, lastAICtx = null;
+
+/* ═══════════════════════════════════════════
+   SIDEBAR TOGGLE
+═══════════════════════════════════════════ */
+document.getElementById('hamBtn').addEventListener('click', () => {
+  sbOpen = !sbOpen;
+  document.getElementById('sidebar').classList.toggle('open', sbOpen);
+  document.getElementById('main').classList.toggle('sb-open', sbOpen);
+});
+
+function toggleMod(id) {
+  const row = document.getElementById('mod-' + id);
+  const subs = document.getElementById('subs-' + id);
+  const wasOpen = row.classList.contains('mod-open');
+  // collapse all
+  ['finance','scm','hcm','pdh'].forEach(m => {
+    document.getElementById('mod-'+m)?.classList.remove('mod-open');
+    document.getElementById('subs-'+m)?.classList.remove('open');
+  });
+  if (!wasOpen) {
+    row.classList.add('mod-open');
+    subs.classList.add('open');
+    if (!sbOpen) {
+      sbOpen = true;
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('main').classList.add('sb-open');
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+function showHome() {
+  document.getElementById('view-home').classList.remove('hidden');
+  document.getElementById('view-sub').classList.add('hidden');
+  document.querySelectorAll('.sb-row').forEach(r => r.classList.remove('active'));
+  document.getElementById('homeRow').classList.add('active');
+  document.querySelectorAll('.sb-sub').forEach(s => s.classList.remove('active'));
+}
+
+async function selectSub(mod, sub) {
+  curMod = mod; curSub = sub;
+  document.getElementById('view-home').classList.add('hidden');
+  document.getElementById('view-sub').classList.remove('hidden');
+
+  // Sidebar active states
+  document.querySelectorAll('.sb-row').forEach(r => r.classList.remove('active'));
+  document.querySelectorAll('.sb-sub').forEach(s => s.classList.remove('active'));
+  const modKey = mod.toLowerCase();
+  document.getElementById('mod-' + modKey)?.classList.add('mod-open');
+  document.getElementById('subs-' + modKey)?.classList.add('open');
+  const subEl = document.querySelector(`.sb-sub[data-mod="${mod}"][data-sub="${sub}"]`);
+  if (subEl) subEl.classList.add('active');
+
+  // Open sidebar if closed
+  if (!sbOpen) {
+    sbOpen = true;
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('main').classList.add('sb-open');
+  }
+
+  // Page header
+  document.getElementById('bcMod').textContent = mod;
+  document.getElementById('bcSub').textContent = sub;
+  document.getElementById('pageTitle').textContent = getSubName(mod, sub);
+  document.getElementById('pageMeta').textContent = `Oracle Fusion ${mod} — Conversion Knowledge`;
+
+  renderAllTabs();
+  switchTab('quality');
+  await enrichTabsFromDB(mod, sub);
+}
+
+function getSubName(mod, sub) {
+  const names = {
+    'Finance.AR': 'Accounts Receivable', 'Finance.AP': 'Accounts Payable',
+    'Finance.GL': 'General Ledger', 'Finance.Projects': 'Projects',
+    'SCM.Inventory': 'Inventory', 'SCM.Procurement': 'Procurement',
+    'HCM.Employees': 'Employee Records', 'HCM.Payroll': 'Payroll', 'HCM.Benefits': 'Benefits',
+    'PDH.ItemMaster':       'Item Master',
+    'PDH.ItemEff':          'Item Eff',
+    'PDH.ItemCategories':   'Item Categories',
+    'PDH.ItemStructure':    'Item Structure',
+    'PDH.ItemRelationship': 'Item Relationship'
+  };
+  return names[`${mod}.${sub}`] || sub;
+}
+
+/* ═══════════════════════════════════════════
+   TAB RENDERING
+═══════════════════════════════════════════ */
+function renderAllTabs() {
+  const data = KB[curMod]?.[curSub];
+  if (!data) return;
+
+  const learnedQ = Learned.filter(e => e.mod===curMod && e.sub===curSub && e.cat==='quality');
+  const learnedL = Learned.filter(e => e.mod===curMod && e.sub===curSub && e.cat==='load');
+  const learnedLin = Learned.filter(e => e.mod===curMod && e.sub===curSub && e.cat==='lineage');
+
+  const qAll = [...(data.quality||[]), ...learnedQ.map(e => ({id:'AI', sev:'m', badge:'AI', title: e.title || 'AI-Learned Rule', desc: e.content, field:'—', method:'AI Generated', owner:'AI Assistant'}))];
+  const lAll = [...(data.load||[]), ...learnedL.map(e => ({id:'AI', sev:'m', badge:'AI', title: e.title || 'AI-Learned Rule', desc: e.content, field:'—', method:'AI Generated', owner:'AI Assistant'}))];
+  const linImpacts = [...(data.lineage?.impacts||[]), ...learnedLin.map(e => ({sev:'m', title: e.title||'AI Note', desc: e.content}))];
+
+  document.getElementById('cnt-quality').textContent = qAll.length;
+  document.getElementById('cnt-load').textContent = lAll.length;
+  document.getElementById('cnt-lineage').textContent = data.lineage?.nodes?.length || 0;
+
+  document.getElementById('tab-quality').innerHTML = renderQualityTab(qAll);
+  document.getElementById('tab-load').innerHTML = renderLoadTab(lAll);
+  document.getElementById('tab-lineage').innerHTML = renderLineageTab(data.lineage?.nodes || [], linImpacts);
+}
+
+function renderQualityTab(rules) {
+  const alert = `<div class="alert alert-or"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v4M8 11.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>Quality checks run automatically during FBDI import. <strong>Critical</strong> and <strong>High</strong> severity failures reject the entire batch.</span></div>`;
+  return alert + `<div class="sec-head">Quality Rules (${rules.length})</div>` + renderCards(rules);
+}
+
+function renderLoadTab(rules) {
+  const alert = `<div class="alert alert-bl"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 7v3M8 12v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>Load sequence is critical. Always validate prerequisites before executing. Monitor all ESS jobs in Oracle Fusion after each batch load.</span></div>`;
+  return alert + `<div class="sec-head">Load Rules (${rules.length})</div>` + renderCards(rules);
+}
+
+function renderCards(rules) {
+  if (!rules.length) return `<div class="empty-state"><div class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v5M12 15.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="empty-title">No Rules Yet</div><div class="empty-desc">Use the AI search bar to fetch recommendations from Oracle documentation.</div></div>`;
+  const sevLabel = { c:'CRITICAL', h:'HIGH', m:'MEDIUM', l:'LOW' };
+  return `<div class="rule-list">${rules.map(r => `
+    <div class="rule-card">
+      <div class="rule-sev sev-${r.sev}"></div>
+      <div class="rule-body">
+        <div class="rule-top">
+          <div class="rule-title">${r.title}</div>
+          <span class="badge badge-${r.sev}">${sevLabel[r.sev]||r.sev.toUpperCase()}</span>
+          <span class="badge badge-tag">${r.badge||'FBDI'}</span>
+        </div>
+        <div class="rule-desc">${r.desc}</div>
+        <div class="rule-meta">
+          ${r.field ? `<span class="rule-mi"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1"/></svg>Field: <strong>${r.field}</strong></span>` : ''}
+          ${r.method ? `<span class="rule-mi"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${r.method}</span>` : ''}
+          ${r.owner ? `<span class="rule-mi"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="4" r="2" stroke="currentColor" stroke-width="1"/><path d="M1.5 11C1.5 9.07 3.57 7.5 6 7.5s4.5 1.57 4.5 3.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>${r.owner}</span>` : ''}
+          ${r.id ? `<span class="rule-mi" style="color:var(--muted2);font-size:10px">${r.id}</span>` : ''}
+        </div>
+      </div>
+      <div class="rule-actions">
+        <button class="rule-btn" onclick="showToast('Viewing details','ok')">Details</button>
+        <button class="rule-btn" onclick="showToast('Edit in enterprise version','warn')">Edit</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderLineageTab(nodes, impacts) {
+  if (!nodes.length) return `<div class="empty-state"><div class="empty-title">No lineage data</div></div>`;
+  const mid = Math.floor(nodes.length / 2);
+  let flow = `<div class="lineage-wrap"><div class="sec-head" style="margin-bottom:18px">Data Flow Lineage</div><div class="lineage-flow">`;
+  nodes.forEach((n, i) => {
+    const cls = i === 0 ? 'src' : (i === mid ? 'cur' : n.type || 'imp');
+    flow += `<div class="flow-node"><div class="node-box ${cls}" onclick="showToast('${n.lbl}','ok')"><div class="node-lbl">${n.lbl}</div><div class="node-sub">${curMod} · ${curSub}</div></div></div>`;
+    if (i < nodes.length - 1) flow += `<div class="flow-arrow"><svg width="22" height="14" viewBox="0 0 22 14" fill="none"><path d="M1 7h16M14 3l5 4-5 4" stroke="var(--muted2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+  });
+  flow += `</div></div>`;
+
+  const sevLbl = { c:'CRITICAL', h:'HIGH', m:'MEDIUM', l:'LOW' };
+  const impHtml = impacts.length ? `<div class="sec-head">Impact Analysis</div><div class="rule-list">${impacts.map(im => `
+    <div class="rule-card">
+      <div class="rule-sev sev-${im.sev||'m'}"></div>
+      <div class="rule-body">
+        <div class="rule-top"><div class="rule-title">${im.title}</div><span class="badge badge-${im.sev||'m'}">${sevLbl[im.sev||'m']}</span></div>
+        <div class="rule-desc">${im.desc}</div>
+      </div>
+    </div>`).join('')}</div>` : '';
+
+  return flow + impHtml;
+}
+
+function switchTab(t) {
+  curTab = t;
+  document.querySelectorAll('.tab-item').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.toggle('active', el.id === 'tab-' + t));
+}
+
+/* ═══════════════════════════════════════════
+   AI AGENT
+═══════════════════════════════════════════ */
+const searchInput = document.getElementById('searchInput');
+const aiPanel = document.getElementById('aiPanel');
+const aiBody = document.getElementById('aiBody');
+const aiSaveBtn = document.getElementById('aiSaveBtn');
+
+searchInput.addEventListener('focus', () => { searchInput.blur(); openAIDrawer(); });
+searchInput.addEventListener('keydown', async e => {
+  if (e.key === 'Enter' && searchInput.value.trim()) {
+    await runAIAgent(searchInput.value.trim());
+  }
+  if (e.key === 'Escape') closeAI();
+});
+document.getElementById('aiCloseBtn').addEventListener('click', closeAI);
+document.addEventListener('click', e => {
+  if (!document.getElementById('searchWrap').contains(e.target)) aiPanel.classList.remove('open');
+});
+
+function closeAI() {
+  aiPanel.classList.remove('open');
+  searchInput.value = '';
+  aiSaveBtn.style.display = 'none';
+  lastAIAnswer = null;
+}
+
+function focusSearch() {
+  searchInput.focus();
+  aiPanel.classList.add('open');
+}
+
+/* ── AGENT FLOW ── */
+async function runAIAgent(query) {
+  aiPanel.classList.add('open');
+  aiSaveBtn.style.display = 'none';
+  lastAIAnswer = null;
+
+  // Step 1: search internal KB
+  setAIThinking('Searching internal knowledge base…');
+  const internalHit = searchKB(query);
+  if (internalHit) {
+    aiBody.innerHTML = internalHit;
+    aiQueryCount++;
+    document.getElementById('statAI').textContent = aiQueryCount;
+    return;
+  }
+
+  // Step 2 + 3: call Claude with Oracle expert context + web search context
+  setAIThinking('Consulting AI — searching Oracle documentation and general knowledge…');
+  try {
+    const html = await callClaude(query);
+    aiBody.innerHTML = html;
+    aiSaveBtn.style.display = 'block';
+    lastAICtx = detectContext(query);
+    aiSaveBtn.onclick = () => saveToKB(query);
+    aiQueryCount++;
+    document.getElementById('statAI').textContent = aiQueryCount;
+  } catch (err) {
+    aiBody.innerHTML = `<div class="ai-answer"><p style="color:var(--err)">⚠ Unable to reach AI service. Check your network connection and try again.</p></div>`;
+  }
+}
+
+function setAIThinking(msg) {
+  aiBody.innerHTML = `<div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span>${msg}</span></div>`;
+}
+
+/* ── KB SEARCH ── */
+function searchKB(query) {
+  const q = query.toLowerCase();
+  const hits = [];
+
+  for (const [mod, subs] of Object.entries(KB)) {
+    for (const [sub, data] of Object.entries(subs)) {
+      for (const rule of [...(data.quality||[]), ...(data.load||[])]) {
+        const score = (rule.title.toLowerCase().includes(q) ? 3 : 0)
+          + (rule.desc.toLowerCase().includes(q) ? 2 : 0)
+          + ((rule.field||'').toLowerCase().includes(q) ? 1 : 0);
+        if (score > 0) hits.push({ rule, mod, sub, score });
+      }
+      for (const imp of (data.lineage?.impacts||[])) {
+        if (imp.title.toLowerCase().includes(q) || imp.desc.toLowerCase().includes(q)) {
+          hits.push({ rule: {id:'LIN', sev:imp.sev||'m', title:imp.title, desc:imp.desc, badge:'Lineage', field:'—', method:'Impact Analysis', owner:'Architecture'}, mod, sub, score:2 });
+        }
+      }
+    }
+  }
+  // also search learned entries
+  for (const e of Learned) {
+    if ((e.title||'').toLowerCase().includes(q) || (e.content||'').toLowerCase().includes(q)) {
+      hits.push({ rule: {id:'AI', sev:'m', title:e.title||'AI-Learned', desc:e.content, badge:'AI', field:'—', method:'AI Generated', owner:'AI Assistant'}, mod:e.mod, sub:e.sub, score:2 });
+    }
+  }
+
+  if (!hits.length) return null;
+  hits.sort((a,b) => b.score - a.score);
+  const top = hits.slice(0, 3);
+
+  const sevLabel = { c:'CRITICAL', h:'HIGH', m:'MEDIUM', l:'LOW' };
+  return `<div class="ai-answer">
+    <h4>Found in Knowledge Base — ${hits.length} result${hits.length>1?'s':''}</h4>
+    ${top.map(({rule:r, mod, sub}) => `
+      <div class="hit-card">
+        <div class="hit-title">${r.title} <span class="badge badge-${r.sev}" style="vertical-align:middle">${sevLabel[r.sev]||r.sev}</span> <span class="badge badge-tag" style="vertical-align:middle">${r.badge}</span></div>
+        <div class="hit-desc">${r.desc}</div>
+        <div class="hit-meta">${mod} › ${sub}${r.field&&r.field!=='—' ? ' · Field: '+r.field : ''}${r.id ? ' · '+r.id : ''}</div>
+      </div>`).join('')}
+    ${hits.length > 3 ? `<p style="font-size:11px;color:var(--muted2);margin-top:8px">+${hits.length-3} more results in the knowledge base.</p>` : ''}
+  </div>`;
+}
+
+/* ── CLAUDE API ── */
+async function callClaude(query) {
+  const systemPrompt = `You are Oracle Conversion Hub AI — an expert Oracle Cloud (Oracle Fusion) ERP data conversion specialist.
+
+You have deep expertise in:
+- Oracle Fusion Finance (AR, AP, GL, Projects), SCM (Inventory, Procurement, PDH), and HCM modules
+- FBDI (File-Based Data Import) templates, validation rules, and Oracle import best practices  
+- Data quality checks, load sequencing, batch size limits, and common conversion errors
+- Oracle ESS jobs, FBDI interface tables, and data lineage in Oracle Fusion Cloud
+- Oracle documentation at docs.oracle.com and Oracle Cloud implementation methodology
+
+BEHAVIOR RULES (CRITICAL):
+1. Provide specific, actionable Oracle Fusion conversion answers
+2. Do NOT mention your sources, search steps, or internal reasoning
+3. Do NOT say "I searched" or "According to Oracle docs" — just give the answer
+4. Use markdown formatting: bold for key terms, bullet lists for steps/rules, headings for sections
+5. Keep responses under 400 words
+6. Focus on practical, implementable guidance`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: query }]
+    })
+  });
+
+  if (!response.ok) throw new Error(`API error ${response.status}`);
+  const data = await response.json();
+  lastAIAnswer = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '';
+
+  // Format markdown to HTML
+  let html = lastAIAnswer
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^## (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^# (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)(\n<li>[\s\S]*?<\/li>)*/g, m => `<ul>${m}</ul>`)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+
+  return `<div class="ai-answer"><p>${html}</p></div>`;
+}
+
+/* ── CONTEXT DETECTION for KB save ── */
+function detectContext(query) {
+  const q = query.toLowerCase();
+  let mod = 'Finance', sub = 'AR', cat = 'quality';
+
+  if (q.includes('payable') || q.includes(' ap ') || q.includes('vendor') || q.includes('invoice')) { mod='Finance'; sub='AP'; }
+  else if (q.includes('general ledger') || q.includes(' gl ') || q.includes('journal') || q.includes('coa')) { mod='Finance'; sub='GL'; }
+  else if (q.includes('project')) { mod='Finance'; sub='Projects'; }
+  else if (q.includes('inventory') || q.includes('on-hand') || q.includes('stock') || q.includes('uom')) { mod='SCM'; sub='Inventory'; }
+  else if (q.includes('procure') || q.includes('purchase order') || q.includes(' po ') || q.includes('supplier site')) { mod='SCM'; sub='Procurement'; }
+  else if (q.includes('pdh') || q.includes('product data') || q.includes('item master') || q.includes('catalog')) { mod='SCM'; sub='PDH'; }
+  else if (q.includes('employee') || q.includes('hire') || q.includes('worker') || q.includes('national id')) { mod='HCM'; sub='Employees'; }
+  else if (q.includes('payroll') || q.includes('salary') || q.includes('pay run')) { mod='HCM'; sub='Payroll'; }
+  else if (q.includes('benefit') || q.includes('enrollment') || q.includes('dependent')) { mod='HCM'; sub='Benefits'; }
+
+  if (q.includes('load') || q.includes('batch') || q.includes('import') || q.includes('sequence') || q.includes('prerequisite')) cat = 'load';
+  else if (q.includes('lineage') || q.includes('impact') || q.includes('downstream') || q.includes('dependency')) cat = 'lineage';
+
+  return { mod, sub, cat };
+}
+
+/* ── SAVE TO KB ── */
+function saveToKB(query) {
+  if (!lastAIAnswer) return;
+  const ctx = lastAICtx || { mod: curMod||'Finance', sub: curSub||'AR', cat: 'quality' };
+
+  // Strip HTML back to plain text for storage
+  const plainText = lastAIAnswer.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+  Learned.push({
+    title: `AI: ${query.slice(0, 60)}${query.length > 60 ? '…' : ''}`,
+    content: plainText,
+    mod: ctx.mod, sub: ctx.sub, cat: ctx.cat,
+    ts: new Date().toISOString()
+  });
+
+  // Update rule count
+  const total = 142 + Learned.length;
+  document.getElementById('statTotal').textContent = total;
+
+  // Re-render if on the matching page
+  if (curMod === ctx.mod && curSub === ctx.sub) {
+    renderAllTabs();
+    switchTab(curTab);
+  }
+
+  aiSaveBtn.style.display = 'none';
+  showToast(`Saved to ${ctx.mod} › ${ctx.sub} Knowledge Base`, 'ok');
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+let _toastTimer = null;
+function showToast(msg, type = 'ok') {
+  document.querySelector('.toast')?.remove();
+  if (_toastTimer) clearTimeout(_toastTimer);
+  const t = document.createElement('div');
+  t.className = 'toast';
+  const icon = type === 'ok'
+    ? `<svg class="toast-ok" width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2.5 2.5L11 5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    : `<svg class="toast-warn" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 7v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+  t.innerHTML = icon + `<span>${msg}</span>`;
+  document.body.appendChild(t);
+  _toastTimer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(10px)';
+    t.style.transition = '.2s ease';
+    setTimeout(() => t.remove(), 200);
+  }, 3000);
+}
+
+/* Init */
+showHome();
+</script>
+
+<!-- ════════════════════════════════════
+     AI OVERLAY + DRAWER (server.py backed)
+════════════════════════════════════ -->
+<div class="ai-overlay" id="aiOverlay" onclick="closeAIDrawer()"></div>
+<div class="ai-drawer" id="aiDrawer">
+
+  <!-- Header -->
+  <div class="aid-hdr">
+    <div class="aid-left">
+      <div class="aid-mark">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2l2.5 5.5H18l-4.5 3.3 1.8 5.7L10 13.3l-5.3 3.2 1.8-5.7L2 7.5h5.5L10 2z" fill="white"/>
+        </svg>
+      </div>
+      <div class="aid-titles">
+        <h4>Conversion AI Assistant</h4>
+        <p>Powered by Oracle Conversion Intelligence</p>
+      </div>
+    </div>
+    <button class="aid-close" onclick="closeAIDrawer()">✕</button>
+  </div>
+
+
+
+  <!-- Messages -->
+  <div class="aid-msgs" id="aidMsgs">
+    <div class="ai-msg bot">
+      <div class="ai-mb">
+        <strong>Oracle Conversion Intelligence Assistant</strong><br/><br/>
+        Ask anything about Oracle Fusion data conversion — FBDI templates, data quality rules, load sequencing, module dependencies, or anything else.<br/><br/>
+        <div class="ai-chips">
+          <span class="ai-chip" onclick="aidAsk(this.textContent)">AR to Projects dependency</span>
+          <span class="ai-chip" onclick="aidAsk(this.textContent)">FBDI date format rules</span>
+          <span class="ai-chip" onclick="aidAsk(this.textContent)">GL opening balance steps</span>
+          <span class="ai-chip" onclick="aidAsk(this.textContent)">Batch size limits</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="aid-input-area">
+    <div class="aid-input-row">
+      <textarea id="aidInput" rows="2"
+        placeholder="Ask about any Oracle conversion topic…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aidSend()}"></textarea>
+      <button class="aid-send" onclick="aidSend()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M2 14L14 8 2 2v4.5l7 1.5-7 1.5z" fill="white"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Inject toast -->
+<div class="inject-toast" id="injectToast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   AI DRAWER — Updated Logic
+═══════════════════════════════════════════════════════════ */
+
+const SERVER_URL  = 'http://localhost:3000/api/chat';
+const STATS_URL   = 'http://localhost:3000/api/stats';
+// KB_API_URL defined in first script block
+let totalDiscovered = 0;
+
+async function syncStats() {
+  try {
+    const r = await fetch(STATS_URL);
+    if (!r.ok) return;
+    const d = await r.json();
+    const el = document.getElementById('statTotal');
+    if (el && d.total_rules) el.textContent = d.total_rules;
+  } catch (_) {}
+}
+
+function openAIDrawer() {
+  document.getElementById('aiDrawer').classList.add('open');
+  document.getElementById('aiOverlay').classList.add('show');
+  document.getElementById('aiSideRow')?.classList.add('active');
+}
+function closeAIDrawer() {
+  document.getElementById('aiDrawer').classList.remove('open');
+  document.getElementById('aiOverlay').classList.remove('show');
+  document.getElementById('aiSideRow')?.classList.remove('active');
+}
+function aidAsk(q) {
+  openAIDrawer();
+  document.getElementById('aidInput').value = q;
+  setTimeout(aidSend, 150);
+}
+
+function aidAddMsg(role, html) {
+  const msgs = document.getElementById('aidMsgs');
+  const d = document.createElement('div');
+  d.className = 'ai-msg ' + role;
+  d.innerHTML = `<div class="ai-mb">${html}</div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function aidTyping() {
+  const msgs = document.getElementById('aidMsgs');
+  const d = document.createElement('div');
+  d.className = 'ai-msg bot'; d.id = 'aidTyping';
+  d.innerHTML = `<div class="ai-mb"><div class="ty-dots"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function aidRmTyping() { document.getElementById('aidTyping')?.remove(); }
+
+function getFU(q) {
+  q = q.toLowerCase();
+  if (q.includes('ar') || q.includes('customer') || q.includes('receivable'))
+    return ['AR site completeness check','Impact on Project Contracts','AutoAccounting GL setup'];
+  if (q.includes('ap') || q.includes('supplier') || q.includes('payable'))
+    return ['Supplier bank validation rules','AP to GL distribution check','AP prepayment strategy'];
+  if (q.includes('gl') || q.includes('opening balance') || q.includes('coa'))
+    return ['GL opening balance reconciliation','COA segment mapping guide','AP distribution validation'];
+  if (q.includes('project') || q.includes('revenue') || q.includes('contract'))
+    return ['Project to GL reconciliation','Revenue recognition chain','Project load sequence'];
+  if (q.includes('fbdi') || q.includes('batch') || q.includes('load'))
+    return ['Error log review process','Load sequence order guide','Batch size by module'];
+  if (q.includes('hcm') || q.includes('employee') || q.includes('payroll'))
+    return ['Org hierarchy setup steps','Payroll element load order','Benefits plan design prereqs'];
+  return ['Data quality check guide','Cross-module dependency map','Load sequence best practices'];
+}
+
+/* Fetch AI-discovered entries from DB and re-render correct tab */
+async function refreshTabFromDB(cardMod, cardSub, cardTab) {
+  if (!curMod || !curSub) return;
+  if (curMod.toLowerCase() !== cardMod.toLowerCase()) return;
+  if (curSub.toLowerCase() !== cardSub.toLowerCase()) return;
+
+  try {
+    const r = await fetch(`${KB_API_URL}/${cardMod}/${cardSub}/${cardTab}`);
+    if (!r.ok) return;
+    const dbRows = await r.json();
+
+    const sevMap   = { Critical:'c', High:'h', Medium:'m', Info:'l' };
+    const sevLabel = { c:'CRITICAL', h:'HIGH', m:'MEDIUM', l:'LOW' };
+    const data     = KB[curMod]?.[curSub];
+    if (!data) return;
+
+    const staticRules = cardTab === 'quality' ? (data.quality||[]) : (data.load||[]);
+    const staticIds   = new Set(staticRules.map(r => r.id));
+    const dbCards     = dbRows
+      .filter(row => !staticIds.has(row.card_id))
+      .map(row => ({
+        id:     row.card_id || String(row.id),
+        sev:    sevMap[row.severity] || 'm',
+        badge:  'AI',
+        title:  row.title,
+        desc:   row.description,
+        code:   row.code_block || '',
+        tip:    row.tip        || '',
+        field:  '—',
+        method: 'AI Discovered',
+        owner:  'AI Assistant'
+      }));
+    const merged = [...staticRules, ...dbCards];
+
+    function cardHtml(r) {
+      const codeBlock = r.code
+        ? `<div style="background:var(--rule2);border-left:3px solid var(--or);padding:8px 12px;font-family:monospace;font-size:11px;border-radius:0 6px 6px 0;margin-bottom:8px;line-height:1.55;white-space:pre-wrap">${r.code}</div>`
+        : '';
+      const tipBlock = r.tip
+        ? `<div style="display:flex;align-items:flex-start;gap:7px;background:#FFFDE7;border:1px solid #FDD835;border-radius:6px;padding:7px 9px;font-size:11.5px;color:#5D4037;line-height:1.5;margin-bottom:8px"><span>💡</span><span>${r.tip}</span></div>`
+        : '';
+      return `
+        <div class="rule-card${r.badge === 'AI' ? ' ai-found' : ''}">
+          <div class="rule-sev sev-${r.sev}"></div>
+          <div class="rule-body">
+            <div class="rule-top">
+              <div class="rule-title">${r.title}</div>
+              <span class="badge badge-${r.sev}">${sevLabel[r.sev]||r.sev.toUpperCase()}</span>
+              <span class="badge ${r.badge==='AI' ? 'badge-ai' : 'badge-tag'}">${r.badge||'FBDI'}</span>
+            </div>
+            <div class="rule-desc">${r.desc}</div>
+            ${codeBlock}${tipBlock}
+            <div class="rule-meta">
+              ${r.field && r.field!=='—' ? `<span class="rule-mi"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1"/></svg>Field: <strong>${r.field}</strong></span>` : ''}
+              ${r.method ? `<span class="rule-mi"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${r.method}</span>` : ''}
+              ${r.owner  ? `<span class="rule-mi"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="4" r="2" stroke="currentColor" stroke-width="1"/><path d="M1.5 11C1.5 9.07 3.57 7.5 6 7.5s4.5 1.57 4.5 3.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>${r.owner}</span>` : ''}
+              ${r.id ? `<span class="rule-mi" style="color:var(--muted2);font-size:10px">${r.id}</span>` : ''}
+            </div>
+          </div>
+          <div class="rule-actions">
+            <button class="rule-btn" onclick="showToast('Viewing details','ok')">Details</button>
+            <button class="rule-btn" onclick="showToast('Edit in enterprise version','warn')">Edit</button>
+          </div>
+        </div>`;
+    }
+
+    const alertHtml = cardTab === 'quality'
+      ? `<div class="alert alert-or"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v4M8 11.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>Quality checks run automatically during FBDI import. <strong>Critical</strong> and <strong>High</strong> severity failures reject the entire batch.</span></div>`
+      : `<div class="alert alert-bl"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 7v3M8 12v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>Load sequence is critical. Always validate prerequisites before executing.</span></div>`;
+
+    const labelMap = { quality:'Quality Rules', load:'Load Rules', lineage:'Lineage' };
+    const tabEl = document.getElementById('tab-' + cardTab);
+    if (tabEl) {
+      tabEl.innerHTML = alertHtml
+        + `<div class="sec-head">${labelMap[cardTab]} (${merged.length})</div>`
+        + `<div class="rule-list">${merged.map(cardHtml).join('')}</div>`;
+      const cntEl = document.getElementById('cnt-' + cardTab);
+      if (cntEl) cntEl.textContent = merged.length;
+      switchTab(cardTab);
+    }
+  } catch(e) {
+    console.warn('[refreshTabFromDB]', e);
+  }
+}
+
+/* Enrich tabs with DB entries after navigation */
+async function enrichTabsFromDB(mod, sub) {
+  const sevMap   = { Critical:'c', High:'h', Medium:'m', Info:'l' };
+  const sevLabel = { c:'CRITICAL', h:'HIGH', m:'MEDIUM', l:'LOW' };
+  const data     = KB[mod]?.[sub];
+  if (!data) return;
+
+  for (const cat of ['quality','load']) {
+    try {
+      const r = await fetch(`${KB_API_URL}/${mod}/${sub}/${cat}`);
+      if (!r.ok) continue;
+      const dbRows = await r.json();
+      const aiRows = dbRows.filter(row => row.source === 'ai_discovered');
+      if (!aiRows.length) continue;
+
+      const staticRules = cat === 'quality' ? (data.quality||[]) : (data.load||[]);
+      const staticIds   = new Set(staticRules.map(r => r.id));
+      const newRows     = aiRows.filter(row => !staticIds.has(row.card_id));
+      if (!newRows.length) continue;
+
+      const newCardsHtml = newRows.map(row => {
+        const sev      = sevMap[row.severity] || 'm';
+        const codeHtml = row.code_block ? `<div style="background:var(--rule2);border-left:3px solid var(--or);padding:8px 12px;font-family:monospace;font-size:11px;border-radius:0 6px 6px 0;margin-bottom:8px;line-height:1.55;white-space:pre-wrap">${row.code_block}</div>` : '';
+        const tipHtml  = row.tip ? `<div style="display:flex;align-items:flex-start;gap:7px;background:#FFFDE7;border:1px solid #FDD835;border-radius:6px;padding:7px 9px;font-size:11.5px;color:#5D4037;line-height:1.5;margin-bottom:8px"><span>💡</span><span>${row.tip}</span></div>` : '';
+        return `<div class="rule-card ai-found">
+          <div class="rule-sev sev-${sev}"></div>
+          <div class="rule-body">
+            <div class="rule-top">
+              <div class="rule-title">${row.title}</div>
+              <span class="badge badge-${sev}">${sevLabel[sev]}</span>
+              <span class="badge badge-ai">AI</span>
+            </div>
+            <div class="rule-desc">${row.description}</div>
+            ${codeHtml}${tipHtml}
+            <div class="rule-meta"><span class="rule-mi" style="color:var(--muted2);font-size:10px">${row.card_id||row.id}</span></div>
+          </div>
+          <div class="rule-actions"><button class="rule-btn" onclick="showToast('Viewing details','ok')">Details</button></div>
+        </div>`;
+      }).join('');
+
+      const tabEl = document.getElementById('tab-' + cat);
+      if (!tabEl) continue;
+      let ruleList = tabEl.querySelector('.rule-list');
+      if (!ruleList) { ruleList = document.createElement('div'); ruleList.className = 'rule-list'; tabEl.appendChild(ruleList); }
+      ruleList.insertAdjacentHTML('beforeend', newCardsHtml);
+      const cntEl = document.getElementById('cnt-' + cat);
+      if (cntEl) cntEl.textContent = ruleList.querySelectorAll('.rule-card').length;
+    } catch(e) { console.warn('[enrichTabsFromDB]', e); }
+  }
+}
+
+/* Card injection — navigates to correct page if needed */
+async function injectCard(card) {
+  if (!card) return;
+  const cardMod = card.module    || 'Finance';
+  const cardSub = card.submodule || 'AR';
+  const cardTab = card.tab       || 'quality';
+
+  totalDiscovered++;
+  const sbBadge = document.getElementById('sbDiscBadge');
+  if (sbBadge) { sbBadge.textContent = totalDiscovered; sbBadge.classList.remove('hidden'); }
+
+  const t = document.getElementById('injectToast');
+  if (t) {
+    t.innerHTML = `✅ New rule added → <strong>${cardMod} › ${cardSub} › ${cardTab}</strong>: "${card.title}" <span style="opacity:.7;font-size:10px">(click to view)</span>`;
+    t.style.cursor = 'pointer';
+    t.onclick = () => { selectSub(cardMod, cardSub); setTimeout(() => switchTab(cardTab), 300); t.classList.remove('show'); };
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 6000);
+  }
+
+  const onSamePage = curMod && curSub
+    && curMod.toLowerCase() === cardMod.toLowerCase()
+    && curSub.toLowerCase() === cardSub.toLowerCase();
+
+  if (onSamePage) {
+    await refreshTabFromDB(cardMod, cardSub, cardTab);
+  } else {
+    await selectSub(cardMod, cardSub);
+    setTimeout(() => switchTab(cardTab), 100);
+  }
+}
+
+/* Main send */
+async function aidSend() {
+  const inp = document.getElementById('aidInput');
+  const q   = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+
+  aidAddMsg('user', q);
+  aidTyping();
+
+  try {
+    const res = await fetch(SERVER_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ messages: [{ role: 'user', content: q }] })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      aidRmTyping();
+      aidAddMsg('bot', `<strong>Server error ${res.status}:</strong> ${err.error || 'Unknown error'}`);
+      return;
+    }
+
+    const data = await res.json();
+    aidRmTyping();
+
+    if (data.error) { aidAddMsg('bot', `<strong>Error:</strong> ${data.error}`); return; }
+
+    const txt = (data.content || []).map(b => b.text || '').join('') || 'No response received.';
+    let html = txt
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>');
+
+    const fu = getFU(q);
+    if (fu.length) {
+      html += '<div class="ai-chips" style="margin-top:8px">'
+        + fu.map(f => `<span class="ai-chip" onclick="aidAsk('${f.replace(/'/g,"\\'")}')">` + f + '</span>').join('')
+        + '</div>';
+    }
+    aidAddMsg('bot', html);
+
+    const aiEl = document.getElementById('statAI');
+    if (aiEl) aiEl.textContent = parseInt(aiEl.textContent || '0') + 1;
+
+    if (data.new_card) {
+      setTimeout(async () => {
+        await injectCard(data.new_card);
+        syncStats();
+      }, 500);
+    }
+
+  } catch (e) {
+    aidRmTyping();
+    aidAddMsg('bot',
+      '<strong>Cannot reach the AI server.</strong><br/>'
+      + 'Make sure <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px">python server.py</code> is running on port 3000, then try again.'
+    );
+  }
+}
+
+window.addEventListener('load', syncStats);
+</script>
+</body>
+</html>
