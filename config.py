@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════
 #  config.py — Oracle Conversion Hub Configuration
 # ═══════════════════════════════════════════════════════════
-
+import os
 # ── LLM (PwC Internal Gateway — OpenAI-compatible) ─────────
 LLM_API_URL = "https://genai-sharedservice-americas.pwcinternal.com"
 LLM_API_KEY = "sk-Bix99DXfd7V5H8T5WMvT7Q"   # ← replace with your key
